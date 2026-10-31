@@ -1,0 +1,28 @@
+{% extends "themes/default/layout.pebble" %}
+
+{% block title %}Posts tagged with "{{ tag.name }}" - {{ blog.title }}{% endblock %}
+
+{% block content %}
+<header class="tag-header">
+    <h2>Tagged: #{{ tag.name }}</h2>
+</header>
+
+<section class="post-list">
+    {% if posts is empty %}
+        <p>No posts with this tag yet.</p>
+    {% else %}
+        {% for post in posts %}
+            <article class="post-card">
+                <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+                <div class="post-meta">
+                    <time datetime="{{ post.publishedAt }}">{{ post.publishedAtFormatted }}</time>
+                </div>
+                {% if post.description %}
+                    <p class="post-excerpt">{{ post.description }}</p>
+                {% endif %}
+                <a href="/{{ post.slug }}" class="read-more">Read full story &rarr;</a>
+            </article>
+        {% endfor %}
+    {% endif %}
+</section>
+{% endblock %}

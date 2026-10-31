@@ -1,0 +1,75 @@
+plugins {
+    kotlin("jvm") version "2.0.21"
+    kotlin("plugin.serialization") version "2.0.21"
+    application
+}
+
+group = "com.app"
+version = "1.0.0"
+
+application {
+    mainClass.set("com.app.ApplicationKt")
+}
+
+repositories {
+    mavenCentral()
+}
+
+val ktorVersion = "3.0.2"
+val exposedVersion = "0.57.0"
+val flywayVersion = "10.20.1"
+
+dependencies {
+    // Ktor Server Core & Netty Engine
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth:$ktorVersion")
+    implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+    implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+
+    // Database: Exposed, HikariCP, Flyway, PostgreSQL
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+    implementation("com.zaxxer:HikariCP:5.1.0")
+    implementation("org.postgresql:postgresql:42.7.4")
+    implementation("org.flywaydb:flyway-core:$flywayVersion")
+    implementation("org.flywaydb:flyway-database-postgresql:$flywayVersion")
+
+    // Theme Engine: Pebble Templates (Twig-compatible JVM engine)
+    implementation("io.pebbletemplates:pebble:3.2.2")
+
+    // Markdown Parser
+    implementation("org.commonmark:commonmark:0.24.0")
+
+    // Security & Auth
+    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("com.auth0:java-jwt:4.4.0")
+
+    // Ktor HTTP Client (for AI services)
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
+    implementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
+
+    // Logging
+    implementation("ch.qos.logback:logback-classic:1.5.12")
+
+    // Testing
+    testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.3")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.3")
+}
+
+tasks.test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(21)
+}

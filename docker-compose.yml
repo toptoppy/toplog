@@ -1,0 +1,100 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: blog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-blogdb}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-supersecurepassword123}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-blogdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blog-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: blog-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.app
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${DB_NAME:-blogdb}
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASSWORD:-supersecurepassword123}
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-replace-with-a-random-32-char-string-in-prod}
+      JWT_ISSUER: ${JWT_ISSUER:-blogs-backend}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-blogs-console}
+      STORAGE_UPLOADS_DIR: /app/uploads
+      APP_BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - blog-net
+
+  console:
+    build:
+      context: ./console
+      dockerfile: Dockerfile
+    container_name: blog-console
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.app
+    environment:
+      NODE_ENV: production
+      BACKEND_API_URL: http://backend:8080
+    depends_on:
+      - backend
+    networks:
+      - blog-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: blog-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env.app
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      CONSOLE_DOMAIN: ${CONSOLE_DOMAIN:-console.localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - console
+    networks:
+      - blog-net
+
+volumes:
+  pg_data:
+  uploads_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  blog-net:
+    driver: bridge

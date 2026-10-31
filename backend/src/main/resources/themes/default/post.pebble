@@ -1,0 +1,198 @@
+{% extends "themes/default/layout.pebble" %}
+
+{% block title %}{{ post.title }} - {{ blog.title }}{% endblock %}
+{% block description %}{{ post.description }}{% endblock %}
+
+{% block content %}
+<article class="single-post">
+    <header class="post-header">
+        <h1>{{ post.title }}</h1>
+        <div class="post-meta">
+            <time datetime="{{ post.publishedAt }}">Published on {{ post.publishedAtFormatted }}</time>
+            <span class="reading-time">&bull; {{ readingTimeMinutes }} min read</span>
+            {% if tags is not empty %}
+                <span class="post-tags">
+                    in
+                    {% for tag in tags %}
+                        <a href="/tag/{{ tag.slug }}" class="tag-pill">{{ tag.name }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </span>
+            {% endif %}
+        </div>
+    </header>
+
+    {% if post.featuredImageUrl %}
+        <figure class="post-featured-image">
+            <img src="{{ post.featuredImageUrl }}" alt="{{ post.title }}">
+        </figure>
+    {% endif %}
+
+    <!-- Auto-Generated Table of Contents -->
+    <aside class="post-toc" id="post-toc" style="display: none;">
+        <h3>Table of Contents</h3>
+        <ul id="toc-list"></ul>
+    </aside>
+
+    <div class="post-body" id="post-article-body">
+        {{ post.contentHtml | raw }}
+    </div>
+
+    <!-- Reader Comments Section -->
+    <section class="comments-section" id="comments">
+        <h2 class="comments-title">Comments ({% if comments is empty %}0{% else %}{{ comments.size() }}{% endif %})</h2>
+
+        {% if comments is not empty %}
+            <div class="comments-list">
+                {% for comment in comments %}
+                    <div class="comment-card" id="comment-{{ comment.id }}">
+                        <div class="comment-header">
+                            <span class="comment-author">
+                                {% if comment.authorWebsite %}
+                                    <a href="{{ comment.authorWebsite }}" target="_blank" rel="nofollow noopener">{{ comment.authorName }}</a>
+                                {% else %}
+                                    {{ comment.authorName }}
+                                {% endif %}
+                            </span>
+                            <time class="comment-date">{{ comment.createdAt }}</time>
+                        </div>
+                        <div class="comment-body">
+                            {{ comment.content }}
+                        </div>
+
+                        <!-- Nested Replies -->
+                        {% if comment.replies is not empty %}
+                            <div class="comment-replies">
+                                {% for reply in comment.replies %}
+                                    <div class="comment-card comment-reply" id="comment-{{ reply.id }}">
+                                        <div class="comment-header">
+                                            <span class="comment-author">{{ reply.authorName }}</span>
+                                            <time class="comment-date">{{ reply.createdAt }}</time>
+                                        </div>
+                                        <div class="comment-body">
+                                            {{ reply.content }}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color: #64748b; font-size: 0.95rem;">No comments yet. Be the first to share your thoughts!</p>
+        {% endif %}
+
+        <!-- Comment Form -->
+        <form id="comment-submission-form" class="comment-form">
+            <h3>Leave a Reply</h3>
+            <input type="hidden" id="comment-post-id" value="{{ postId }}">
+            <input type="text" id="comment-honeypot" style="display:none;" tabindex="-1" autocomplete="off">
+
+            <div class="form-grid">
+                <div>
+                    <input type="text" id="comment-author-name" class="comment-input" placeholder="Your Name *" required>
+                </div>
+                <div>
+                    <input type="email" id="comment-author-email" class="comment-input" placeholder="Your Email (kept private) *" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <input type="url" id="comment-author-website" class="comment-input" placeholder="Your Website (optional)">
+            </div>
+
+            <div>
+                <textarea id="comment-content" class="comment-textarea" placeholder="Write your thoughts..." required></textarea>
+            </div>
+
+            <button type="submit" id="comment-submit-btn" class="comment-btn">Post Comment</button>
+            <div id="comment-form-status" class="comment-msg" style="display: none;"></div>
+        </form>
+    </section>
+
+    <footer class="post-footer">
+        <p><a href="/" class="back-link">&larr; Back to all posts</a></p>
+    </footer>
+</article>
+
+<script>
+(function() {
+    var form = document.getElementById('comment-submission-form');
+    var status = document.getElementById('comment-form-status');
+    var submitBtn = document.getElementById('comment-submit-btn');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Submitting...';
+            status.style.display = 'none';
+
+            var payload = {
+                postId: parseInt(document.getElementById('comment-post-id').value, 10),
+                authorName: document.getElementById('comment-author-name').value.trim(),
+                authorEmail: document.getElementById('comment-author-email').value.trim(),
+                authorWebsite: document.getElementById('comment-author-website').value.trim() || null,
+                content: document.getElementById('comment-content').value.trim(),
+                honeypot: document.getElementById('comment-honeypot').value.trim() || null
+            };
+
+            fetch('/api/comments', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                status.style.display = 'block';
+                if (data.success) {
+                    status.className = 'comment-msg success';
+                    status.innerText = data.message || 'Comment submitted! It will appear once approved.';
+                    document.getElementById('comment-content').value = '';
+                } else {
+                    status.className = 'comment-msg error';
+                    status.innerText = data.error || 'Failed to submit comment.';
+                }
+            })
+            .catch(function() {
+                status.style.display = 'block';
+                status.className = 'comment-msg error';
+                status.innerText = 'Could not submit comment. Please try again.';
+            })
+            .finally(function() {
+                submitBtn.disabled = false;
+                submitBtn.innerText = 'Post Comment';
+            });
+        });
+    }
+
+    // --- Auto-generate Table of Contents ---
+    try {
+        var body = document.getElementById('post-article-body');
+        var tocContainer = document.getElementById('post-toc');
+        var tocList = document.getElementById('toc-list');
+
+        if (body && tocContainer && tocList) {
+            var headings = body.querySelectorAll('h2, h3');
+            if (headings.length >= 2) {
+                headings.forEach(function(h, idx) {
+                    if (!h.id) {
+                        h.id = 'heading-' + idx + '-' + h.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+                    }
+                    var li = document.createElement('li');
+                    if (h.tagName.toLowerCase() === 'h3') {
+                        li.className = 'toc-h3';
+                    }
+                    var a = document.createElement('a');
+                    a.href = '#' + h.id;
+                    a.innerText = h.innerText;
+                    li.appendChild(a);
+                    tocList.appendChild(li);
+                });
+                tocContainer.style.display = 'block';
+            }
+        }
+    } catch (e) {}
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "themes/default/layout.pebble" %}
+
+{% block title %}Search: {{ query }} - {{ blog.title }}{% endblock %}
+
+{% block content %}
+<header style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+    <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Search Results</h1>
+    <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
+        {% if query is empty %}
+            Showing all published stories
+        {% else %}
+            Found {{ total }} result(s) for "<strong>{{ query }}</strong>"
+        {% endif %}
+    </p>
+</header>
+
+<section class="post-list">
+    {% if results is empty %}
+        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+            <p style="font-size: 1.1rem; margin-bottom: 1rem;">No articles matched your search.</p>
+            <a href="/" class="read-more">&larr; Back to all articles</a>
+        </div>
+    {% else %}
+        {% for post in results %}
+            <article class="post-card">
+                {% if post.featuredImageUrl %}
+                    <a href="/{{ post.slug }}" class="post-thumbnail">
+                        <img src="{{ post.featuredImageUrl }}" alt="{{ post.title }}" loading="lazy">
+                    </a>
+                {% endif %}
+                <div class="post-card-body">
+                    <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+                    {% if post.description %}
+                        <p class="post-excerpt">{{ post.description }}</p>
+                    {% endif %}
+                    <a href="/{{ post.slug }}" class="read-more">Read article &rarr;</a>
+                </div>
+            </article>
+        {% endfor %}
+    {% endif %}
+</section>
+{% endblock %}

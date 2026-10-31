@@ -1,0 +1,26 @@
+ktor:
+  deployment:
+    port: 8080
+    host: "0.0.0.0"
+  application:
+    modules:
+      - com.app.ApplicationKt.module
+
+database:
+  url: ${DATABASE_URL:-jdbc:postgresql://localhost:5432/blogdb}
+  user: ${DATABASE_USER:-postgres}
+  password: ${DATABASE_PASSWORD:-postgres}
+  poolSize: ${DATABASE_POOL_SIZE:-10}
+
+jwt:
+  secret: ${JWT_SECRET:-super-secret-key-change-me-in-production-min-32-chars}
+  issuer: ${JWT_ISSUER:-blogs-backend}
+  audience: ${JWT_AUDIENCE:-blogs-console}
+  realm: ${JWT_REALM:-Blogs}
+  expirationMs: 86400000 # 24 hours
+
+storage:
+  uploadsDir: ${UPLOADS_DIR:-uploads}
+
+app:
+  baseDomain: ${BASE_DOMAIN:-localhost}

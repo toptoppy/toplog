@@ -1,0 +1,35 @@
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Backend Gradle & Build
+backend/.gradle/
+backend/build/
+backend/.env
+backend/uploads/
+uploads/
+
+# Console Node & Next.js
+console/node_modules/
+console/.next/
+console/out/
+node_modules/
+
+# Environment Local Secrets
+.env.local
+.env.production.local
+.env.development.local
+
+# Logs & Temporary
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tmp/
+testing/
+tests.html
+data.ms/
