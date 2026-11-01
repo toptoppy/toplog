@@ -29,7 +29,7 @@ This guide walks you through setting up, configuring, and operating the blogging
 ## 1. Quickstart (Docker Compose)
 
 The easiest and recommended way to run the platform is using Docker Compose. It orchestrates all four core services:
-- **`blog-postgres`**: PostgreSQL 16 database.
+- **`blog-postgres`**: PostgreSQL 18 database.
 - **`blog-backend`**: Kotlin 21 + Ktor delivery and API service.
 - **`blog-console`**: Next.js 15 + React 19 administration dashboard.
 - **`blog-caddy`**: Reverse proxy with automatic On-Demand TLS certificate management.
@@ -139,7 +139,7 @@ graph TD
     Caddy -->|*.localhost / Custom Domain| Backend["Kotlin Ktor Delivery Engine (:8080)"]
     
     Console -->|API Requests & JWT Auth| Backend
-    Backend -->|Exposed SQL + HikariCP| DB[("PostgreSQL 16")]
+    Backend -->|Exposed SQL + HikariCP| DB[("PostgreSQL 18")]
     Backend -->|Pebble Template Engine| Themes["Themes & HTML Rendering"]
     Backend -->|Background Coroutine Loop| Scheduler["Post Scheduler & Webhook Dispatcher"]
     Backend -->|Media Assets| Storage["Local Disk Uploads (/app/uploads)"]
@@ -202,7 +202,7 @@ If you prefer to run services natively on your host machine for development:
 ### Prerequisites
 - **JDK 21** (`java -version`)
 - **Node.js 20+** & **npm** (`node -v`)
-- **PostgreSQL 16** running locally on port `5432`
+- **PostgreSQL 18** running locally on port `5432`
 
 ### 1. Database Setup
 Create database `blogdb` and user `postgres`:

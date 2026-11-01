@@ -3,7 +3,7 @@
 <p align="center">
   <strong>High-Performance Publishing Engine &amp; Modern Content Studio</strong>
   <br />
-  Kotlin 21 + Ktor Delivery Backend &bull; Next.js 15 Admin Console &bull; PostgreSQL 16 &bull; Caddy 2 On-Demand SSL
+  Kotlin 21 + Ktor 3.1 Delivery Backend &bull; Next.js 15 Admin Console &bull; PostgreSQL 18 &bull; Caddy 2 On-Demand SSL
 </p>
 
 <p align="center">
@@ -47,7 +47,7 @@ graph LR
     Caddy -->|*.localhost, custom domains| Backend["Kotlin Ktor Delivery Engine (:8080)"]
 
     Console -->|REST API + JWT| Backend
-    Backend -->|Exposed SQL + HikariCP| DB[("PostgreSQL 16")]
+    Backend -->|Exposed SQL + HikariCP| DB[("PostgreSQL 18")]
     Backend -->|Pebble Templates| Themes["Themes & HTML Rendering"]
     Backend -->|Coroutine Loop| Scheduler["Post Scheduler & Webhooks"]
 ```

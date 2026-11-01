@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:8.10-jdk21-alpine AS builder
+FROM gradle:8.12-jdk21-alpine AS builder
 WORKDIR /app
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY src ./src

@@ -12,6 +12,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.utils.io.jvm.javaio.toInputStream
 
 fun Route.consoleRoutes(
     blogService: BlogService,
@@ -407,7 +408,7 @@ fun Route.consoleRoutes(
                         multipart.forEachPart { part ->
                             if (part is PartData.FileItem) {
                                 val originalName = part.originalFileName ?: "file"
-                                val inputStream = part.streamProvider()
+                                val inputStream = part.provider().toInputStream()
                                 val (savedName, _) = storageService.saveFile(blogId, originalName, inputStream)
                                 uploadedUrl = "/uploads/$savedName"
                             }
@@ -433,7 +434,7 @@ fun Route.consoleRoutes(
 
                             multipart.forEachPart { part ->
                                 if (part is PartData.FileItem) {
-                                    val inputStream = part.streamProvider()
+                                    val inputStream = part.provider().toInputStream()
                                     result = importService.importWordPressXml(blogId, inputStream, blog.defaultLanguage)
                                 }
                                 part.dispose()
@@ -458,7 +459,7 @@ fun Route.consoleRoutes(
                                 if (part is PartData.FileItem) {
                                     val originalName = part.originalFileName ?: "post.md"
                                     val isZip = originalName.endsWith(".zip", ignoreCase = true)
-                                    val inputStream = part.streamProvider()
+                                    val inputStream = part.provider().toInputStream()
                                     result = importService.importMarkdownBundle(
                                         blogId = blogId,
                                         inputStream = inputStream,

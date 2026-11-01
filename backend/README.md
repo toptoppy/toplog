@@ -19,7 +19,7 @@ Modern, high-performance blogging engine and multi-tenant headless CMS built wit
 ### Prerequisites
 
 - Java 21+
-- PostgreSQL 16+
+- PostgreSQL 18+
 
 ### Local Setup
 

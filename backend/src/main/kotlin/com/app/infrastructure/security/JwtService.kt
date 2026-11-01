@@ -9,6 +9,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import io.ktor.server.auth.*
 import java.util.*
 
+@Suppress("DEPRECATION")
 data class UserPrincipal(
     val userId: Long,
     val email: String,

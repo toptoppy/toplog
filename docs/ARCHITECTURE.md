@@ -36,7 +36,7 @@ flowchart TD
     end
 
     subgraph Persistence["Storage & Persistence Tier"]
-        PostgresDB[("PostgreSQL 16 Database<br/>Exposed SQL + Flyway")]
+        PostgresDB[("PostgreSQL 18 Database<br/>Exposed SQL + Flyway")]
         DiskStorage[("Media File Storage<br/>/app/uploads")]
     end
 
@@ -72,7 +72,7 @@ flowchart TD
 | **Console Frontend** | **Next.js 15 + React 19** | Fast SSR/client transitions, React Server Components where beneficial, clean App Router architecture, and modern TypeScript support. |
 | **Rich Text Editor** | **TipTap (ProseMirror)** | Headless, extensible, produces clean semantic HTML and structured JSON, supports Markdown shortcuts, custom embeds, code highlights, and tables. |
 | **Template Engine** | **Pebble Templates** | Jinja/Twig-inspired syntax for Java/Kotlin, sandboxed, fast parsing, built-in inheritance (`{% extends %}` and `{% block %}`), easily themeable by web developers. |
-| **Database & ORM** | **PostgreSQL 16 + Exposed SQL** | Rock-solid relational consistency, ACID guarantees, native JSONB support, and idiomatic Kotlin DSL via JetBrains Exposed. |
+| **Database & ORM** | **PostgreSQL 18 + Exposed SQL** | Rock-solid relational consistency, ACID guarantees, native JSONB support, and idiomatic Kotlin DSL via JetBrains Exposed. |
 | **Migrations** | **Flyway 10** | Safe, repeatable, version-controlled schema evolution executed automatically on startup. |
 | **Edge Proxy & TLS** | **Caddy 2** | Automatic HTTPS, HTTP/2 & HTTP/3 support, and unique **On-Demand TLS** allowing arbitrary custom domains to receive certificates without server restarts. |
 
