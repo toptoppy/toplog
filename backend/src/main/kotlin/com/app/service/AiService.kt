@@ -3,6 +3,8 @@ package com.app.service
 import com.app.api.dto.AiStatusDto
 import com.app.api.dto.AiTestResponseDto
 import com.app.config.AppConfig
+import com.app.domain.model.Blogs
+import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
@@ -12,6 +14,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
+import org.jetbrains.exposed.sql.selectAll
 
 @Serializable
 data class AiTranslationResult(
@@ -41,44 +44,85 @@ class AiService(private val config: AppConfig) {
         }
     }
 
-    private fun checkConfig() {
-        if (config.aiApiKey.isNullOrBlank()) {
-            throw IllegalArgumentException("AI service is not configured. Please set OPENROUTER_API_KEY or AI_API_KEY in environment variables.")
+    suspend fun resolveConfig(blogId: Long?): Triple<String?, String, String> {
+        if (blogId != null) {
+            val blogRow = dbQuery {
+                Blogs.selectAll().where { Blogs.id eq blogId }.firstOrNull()
+            }
+            if (blogRow != null) {
+                val customKey = blogRow[Blogs.aiApiKey]?.takeIf { it.isNotBlank() }
+                if (customKey != null) {
+                    val customUrl = blogRow[Blogs.aiBaseUrl]?.takeIf { it.isNotBlank() } ?: "https://openrouter.ai/api/v1"
+                    val customModel = blogRow[Blogs.aiModel]?.takeIf { it.isNotBlank() } ?: "google/gemini-2.0-flash-001"
+                    return Triple(customKey, customUrl, customModel)
+                }
+            }
         }
+        return Triple(config.aiApiKey, config.aiBaseUrl, config.aiModel)
     }
 
-    fun getStatus(): AiStatusDto {
-        val isConfigured = !config.aiApiKey.isNullOrBlank()
+    suspend fun getStatus(blogId: Long? = null): AiStatusDto {
+        val (apiKey, baseUrl, model) = resolveConfig(blogId)
+        val isConfigured = !apiKey.isNullOrBlank()
         val provider = when {
-            config.aiBaseUrl.contains("openrouter.ai") -> "OpenRouter"
-            config.aiBaseUrl.contains("openai.com") -> "OpenAI"
-            config.aiBaseUrl.contains("groq.com") -> "Groq"
-            config.aiBaseUrl.contains("deepseek.com") -> "DeepSeek"
-            config.aiBaseUrl.contains("googleapis.com") -> "Gemini"
+            baseUrl.contains("openrouter.ai") -> "OpenRouter"
+            baseUrl.contains("openai.com") -> "OpenAI"
+            baseUrl.contains("groq.com") -> "Groq"
+            baseUrl.contains("deepseek.com") -> "DeepSeek"
+            baseUrl.contains("googleapis.com") -> "Gemini"
             else -> "Custom Provider"
+        }
+        val isCustom = blogId != null && dbQuery {
+            Blogs.selectAll().where { Blogs.id eq blogId }.firstOrNull()?.get(Blogs.aiApiKey)?.isNotBlank() == true
         }
         return AiStatusDto(
             configured = isConfigured,
             provider = provider,
-            baseUrl = config.aiBaseUrl,
-            model = config.aiModel
+            baseUrl = baseUrl,
+            model = model,
+            isCustom = isCustom
         )
     }
 
-    suspend fun testConnection(): AiTestResponseDto {
-        checkConfig()
+    suspend fun testConnection(
+        blogId: Long? = null,
+        overrideKey: String? = null,
+        overrideBaseUrl: String? = null,
+        overrideModel: String? = null
+    ): AiTestResponseDto {
+        val (defaultKey, defaultUrl, defaultModel) = resolveConfig(blogId)
+        val apiKey = overrideKey?.takeIf { it.isNotBlank() && !it.contains("••••") } ?: defaultKey
+        val baseUrl = overrideBaseUrl?.takeIf { it.isNotBlank() } ?: defaultUrl
+        val model = overrideModel?.takeIf { it.isNotBlank() } ?: defaultModel
+
+        if (apiKey.isNullOrBlank()) {
+            throw IllegalArgumentException("No API key provided or configured. Please enter your API key.")
+        }
+
+        val provider = when {
+            baseUrl.contains("openrouter.ai") -> "OpenRouter"
+            baseUrl.contains("openai.com") -> "OpenAI"
+            baseUrl.contains("groq.com") -> "Groq"
+            baseUrl.contains("deepseek.com") -> "DeepSeek"
+            baseUrl.contains("googleapis.com") -> "Gemini"
+            else -> "Custom Provider"
+        }
+
         val startTime = System.currentTimeMillis()
         val response = callChatCompletion(
             systemPrompt = "You are an AI assistant. Reply with only 'CONNECTED'.",
-            userPrompt = "Test connection"
+            userPrompt = "Test connection",
+            apiKey = apiKey,
+            baseUrl = baseUrl,
+            model = model
         )
         val latencyMs = System.currentTimeMillis() - startTime
         return AiTestResponseDto(
             success = true,
-            provider = getStatus().provider,
-            model = config.aiModel,
+            provider = provider,
+            model = model,
             latencyMs = latencyMs,
-            message = "Successfully connected to ${getStatus().provider}! Latency: ${latencyMs}ms. Response: ${response.trim()}"
+            message = "Successfully connected to $provider! Latency: ${latencyMs}ms. Response: ${response.trim()}"
         )
     }
 
@@ -86,9 +130,13 @@ class AiService(private val config: AppConfig) {
         sourceTitle: String,
         sourceDescription: String?,
         sourceContentHtml: String,
-        targetLang: String
+        targetLang: String,
+        blogId: Long? = null
     ): AiTranslationResult {
-        checkConfig()
+        val (apiKey, baseUrl, model) = resolveConfig(blogId)
+        if (apiKey.isNullOrBlank()) {
+            throw IllegalArgumentException("AI service is not configured. Please set an API key in Blog Settings or environment.")
+        }
 
         val systemPrompt = """
             You are a professional blog translator and localization expert.
@@ -113,7 +161,7 @@ class AiService(private val config: AppConfig) {
             $sourceContentHtml
         """.trimIndent()
 
-        val responseText = callChatCompletion(systemPrompt, userPrompt)
+        val responseText = callChatCompletion(systemPrompt, userPrompt, apiKey, baseUrl, model)
         val cleanJson = extractJson(responseText)
 
         return jsonParser.decodeFromString<AiTranslationResult>(cleanJson)
@@ -122,9 +170,13 @@ class AiService(private val config: AppConfig) {
     suspend fun generateSeo(
         title: String,
         contentHtml: String,
-        lang: String
+        lang: String,
+        blogId: Long? = null
     ): AiSeoResult {
-        checkConfig()
+        val (apiKey, baseUrl, model) = resolveConfig(blogId)
+        if (apiKey.isNullOrBlank()) {
+            throw IllegalArgumentException("AI service is not configured. Please set an API key in Blog Settings or environment.")
+        }
 
         val systemPrompt = """
             You are an expert SEO copywriter.
@@ -147,15 +199,21 @@ class AiService(private val config: AppConfig) {
             $contentHtml
         """.trimIndent()
 
-        val responseText = callChatCompletion(systemPrompt, userPrompt)
+        val responseText = callChatCompletion(systemPrompt, userPrompt, apiKey, baseUrl, model)
         val cleanJson = extractJson(responseText)
 
         return jsonParser.decodeFromString<AiSeoResult>(cleanJson)
     }
 
-    private suspend fun callChatCompletion(systemPrompt: String, userPrompt: String): String {
+    private suspend fun callChatCompletion(
+        systemPrompt: String,
+        userPrompt: String,
+        apiKey: String,
+        baseUrl: String,
+        model: String
+    ): String {
         val requestBody = buildJsonObject {
-            put("model", config.aiModel)
+            put("model", model)
             putJsonArray("messages") {
                 addJsonObject {
                     put("role", "system")
@@ -169,9 +227,9 @@ class AiService(private val config: AppConfig) {
             put("temperature", 0.3)
         }
 
-        val endpoint = "${config.aiBaseUrl.trimEnd('/')}/chat/completions"
+        val endpoint = "${baseUrl.trimEnd('/')}/chat/completions"
         val response = httpClient.post(endpoint) {
-            header(HttpHeaders.Authorization, "Bearer ${config.aiApiKey}")
+            header(HttpHeaders.Authorization, "Bearer $apiKey")
             contentType(ContentType.Application.Json)
             // OpenRouter attribution headers
             header("HTTP-Referer", "https://${config.baseDomain}")

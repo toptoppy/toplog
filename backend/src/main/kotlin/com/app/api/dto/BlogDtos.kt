@@ -25,7 +25,10 @@ data class UpdateBlogRequest(
     val fontFamily: String? = null,
     val logoUrl: String? = null,
     val faviconUrl: String? = null,
-    val darkModeEnabled: Boolean? = null
+    val darkModeEnabled: Boolean? = null,
+    val aiApiKey: String? = null,
+    val aiBaseUrl: String? = null,
+    val aiModel: String? = null
 )
 
 @Serializable
@@ -47,5 +50,9 @@ data class BlogDto(
     val domainVerifiedAt: String? = null,
     val domainDnsStatus: String = "UNVERIFIED",
     val darkModeEnabled: Boolean = true,
+    val aiApiKey: String? = null,
+    val aiBaseUrl: String? = null,
+    val aiModel: String? = null,
+    val hasCustomAiKey: Boolean = false,
     val createdAt: String
 )

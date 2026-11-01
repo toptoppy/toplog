@@ -72,6 +72,9 @@ data class Blog(
     val domainVerifiedAt: Instant? = null,
     val domainDnsStatus: String = "UNVERIFIED",
     val darkModeEnabled: Boolean = true,
+    val aiApiKey: String? = null,
+    val aiBaseUrl: String? = null,
+    val aiModel: String? = null,
     val createdAt: Instant
 )
 

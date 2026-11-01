@@ -34,6 +34,10 @@ export interface Blog {
   domainVerifiedAt?: string | null
   domainDnsStatus: DnsStatus
   darkModeEnabled?: boolean
+  aiApiKey?: string | null
+  aiBaseUrl?: string | null
+  aiModel?: string | null
+  hasCustomAiKey?: boolean
   createdAt: string
 }
 
@@ -59,6 +63,9 @@ export interface UpdateBlogInput {
   logoUrl?: string | null
   faviconUrl?: string | null
   darkModeEnabled?: boolean
+  aiApiKey?: string | null
+  aiBaseUrl?: string | null
+  aiModel?: string | null
 }
 
 export interface Tag {
@@ -320,6 +327,7 @@ export interface AiStatus {
   provider: string
   baseUrl: string
   model: string
+  isCustom?: boolean
 }
 
 export interface AiTestResult {

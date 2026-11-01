@@ -25,7 +25,15 @@ data class AiStatusDto(
     val configured: Boolean,
     val provider: String,
     val baseUrl: String,
-    val model: String
+    val model: String,
+    val isCustom: Boolean = false
+)
+
+@Serializable
+data class TestAiRequest(
+    val apiKey: String? = null,
+    val baseUrl: String? = null,
+    val model: String? = null
 )
 
 @Serializable

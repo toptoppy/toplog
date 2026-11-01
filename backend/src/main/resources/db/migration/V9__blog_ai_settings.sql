@@ -1,0 +1,4 @@
+-- V9: Per-blog AI API key and model configuration
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS ai_api_key TEXT NULL;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS ai_base_url TEXT NULL;
+ALTER TABLE blogs ADD COLUMN IF NOT EXISTS ai_model VARCHAR(100) NULL;

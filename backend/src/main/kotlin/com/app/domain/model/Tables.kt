@@ -29,6 +29,9 @@ object Blogs : LongIdTable("blogs") {
     val domainVerifiedAt = timestamp("domain_verified_at").nullable()
     val domainDnsStatus = varchar("domain_dns_status", 50).default("UNVERIFIED")
     val darkModeEnabled = bool("dark_mode_enabled").default(true)
+    val aiApiKey = text("ai_api_key").nullable()
+    val aiBaseUrl = text("ai_base_url").nullable()
+    val aiModel = varchar("ai_model", 100).nullable()
     val createdAt = timestamp("created_at").default(Instant.now())
 }
 

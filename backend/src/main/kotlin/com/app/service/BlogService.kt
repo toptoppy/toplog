@@ -147,6 +147,16 @@ class BlogService {
                 request.logoUrl?.let { lu -> it[Blogs.logoUrl] = lu.trim().ifBlank { null } }
                 request.faviconUrl?.let { fu -> it[Blogs.faviconUrl] = fu.trim().ifBlank { null } }
                 request.darkModeEnabled?.let { dm -> it[Blogs.darkModeEnabled] = dm }
+                if (request.aiApiKey != null) {
+                    val key = request.aiApiKey.trim()
+                    if (key.isEmpty()) {
+                        it[Blogs.aiApiKey] = null
+                    } else if (!key.contains("••••")) {
+                        it[Blogs.aiApiKey] = key
+                    }
+                }
+                request.aiBaseUrl?.let { bu -> it[Blogs.aiBaseUrl] = bu.trim().ifBlank { null } }
+                request.aiModel?.let { m -> it[Blogs.aiModel] = m.trim().ifBlank { null } }
             }
         }
 
@@ -178,27 +188,39 @@ class BlogService {
         domainVerifiedAt = this[Blogs.domainVerifiedAt],
         domainDnsStatus = this[Blogs.domainDnsStatus],
         darkModeEnabled = this[Blogs.darkModeEnabled],
+        aiApiKey = this[Blogs.aiApiKey],
+        aiBaseUrl = this[Blogs.aiBaseUrl],
+        aiModel = this[Blogs.aiModel],
         createdAt = this[Blogs.createdAt]
     )
 
-    fun Blog.toDto(): BlogDto = BlogDto(
-        id = this.id,
-        ownerId = this.ownerId,
-        subdomain = this.subdomain,
-        customDomain = this.customDomain,
-        title = this.title,
-        description = this.description,
-        defaultLanguage = this.defaultLanguage,
-        themeName = this.themeName,
-        codeHead = this.codeHead,
-        codeFoot = this.codeFoot,
-        accentColor = this.accentColor,
-        fontFamily = this.fontFamily,
-        logoUrl = this.logoUrl,
-        faviconUrl = this.faviconUrl,
-        domainVerifiedAt = this.domainVerifiedAt?.toString(),
-        domainDnsStatus = this.domainDnsStatus,
-        darkModeEnabled = this.darkModeEnabled,
-        createdAt = this.createdAt.toString()
-    )
+    fun Blog.toDto(): BlogDto {
+        val maskedKey = this.aiApiKey?.let { k ->
+            if (k.length > 8) k.take(6) + "••••••••" + k.takeLast(4) else "••••••••"
+        }
+        return BlogDto(
+            id = this.id,
+            ownerId = this.ownerId,
+            subdomain = this.subdomain,
+            customDomain = this.customDomain,
+            title = this.title,
+            description = this.description,
+            defaultLanguage = this.defaultLanguage,
+            themeName = this.themeName,
+            codeHead = this.codeHead,
+            codeFoot = this.codeFoot,
+            accentColor = this.accentColor,
+            fontFamily = this.fontFamily,
+            logoUrl = this.logoUrl,
+            faviconUrl = this.faviconUrl,
+            domainVerifiedAt = this.domainVerifiedAt?.toString(),
+            domainDnsStatus = this.domainDnsStatus,
+            darkModeEnabled = this.darkModeEnabled,
+            aiApiKey = maskedKey,
+            aiBaseUrl = this.aiBaseUrl,
+            aiModel = this.aiModel,
+            hasCustomAiKey = !this.aiApiKey.isNullOrBlank(),
+            createdAt = this.createdAt.toString()
+        )
+    }
 }

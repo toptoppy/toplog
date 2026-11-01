@@ -202,9 +202,13 @@ export const api = {
   ai: {
     status: (blogId: number) =>
       request<AiStatus>(`/api/console/blogs/${blogId}/ai/status`),
-    test: (blogId: number) =>
+    test: (
+      blogId: number,
+      data?: { apiKey?: string; baseUrl?: string; model?: string }
+    ) =>
       request<AiTestResult>(`/api/console/blogs/${blogId}/ai/test`, {
         method: 'POST',
+        body: JSON.stringify(data || {}),
       }),
     translate: (
       blogId: number,

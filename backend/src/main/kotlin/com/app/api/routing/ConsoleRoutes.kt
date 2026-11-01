@@ -199,7 +199,8 @@ fun Route.consoleRoutes(
                                     sourceTitle = sourceVariant.title,
                                     sourceDescription = sourceVariant.description,
                                     sourceContentHtml = sourceVariant.contentHtml,
-                                    targetLang = request.targetLanguage
+                                    targetLang = request.targetLanguage,
+                                    blogId = blogId
                                 )
 
                                 val savedVariant = postService.saveVariant(
@@ -236,7 +237,8 @@ fun Route.consoleRoutes(
                                 val seo = aiService.generateSeo(
                                     title = variant.title,
                                     contentHtml = variant.contentHtml,
-                                    lang = request.languageCode
+                                    lang = request.languageCode,
+                                    blogId = blogId
                                 )
 
                                 call.respond(
@@ -273,21 +275,34 @@ fun Route.consoleRoutes(
                     // --- AI CONNECTION ---
                     route("/ai") {
                         get("/status") {
-                            call.respond(HttpStatusCode.OK, aiService.getStatus())
+                            val blogId = call.parameters["blogId"]!!.toLong()
+                            call.respond(HttpStatusCode.OK, aiService.getStatus(blogId))
                         }
 
                         post("/test") {
+                            val blogId = call.parameters["blogId"]!!.toLong()
+                            val request = try {
+                                call.receive<TestAiRequest>()
+                            } catch (_: Exception) {
+                                TestAiRequest()
+                            }
+
                             try {
-                                val result = aiService.testConnection()
+                                val result = aiService.testConnection(
+                                    blogId = blogId,
+                                    overrideKey = request.apiKey,
+                                    overrideBaseUrl = request.baseUrl,
+                                    overrideModel = request.model
+                                )
                                 call.respond(HttpStatusCode.OK, result)
                             } catch (err: Exception) {
-                                val status = aiService.getStatus()
+                                val status = aiService.getStatus(blogId)
                                 call.respond(
                                     HttpStatusCode.OK,
                                     AiTestResponseDto(
                                         success = false,
                                         provider = status.provider,
-                                        model = status.model,
+                                        model = request.model ?: status.model,
                                         error = err.message ?: "Failed to connect to AI provider"
                                     )
                                 )

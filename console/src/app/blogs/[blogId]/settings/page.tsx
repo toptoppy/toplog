@@ -25,8 +25,76 @@ import {
   Sparkles,
   Bot,
   Zap,
+  Eye,
+  EyeOff,
+  Key,
+  Check,
+  ExternalLink,
 } from 'lucide-react'
 import { AiStatus, AiTestResult } from '@/lib/types'
+
+const PROVIDER_PRESETS = [
+  {
+    name: 'OpenRouter (Recommended)',
+    id: 'openrouter',
+    baseUrl: 'https://openrouter.ai/api/v1',
+    defaultModel: 'google/gemini-2.0-flash-001',
+    placeholder: 'sk-or-v1-...',
+    badge: 'Universal Router',
+  },
+  {
+    name: 'OpenAI',
+    id: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o-mini',
+    placeholder: 'sk-proj-...',
+    badge: 'Direct OpenAI',
+  },
+  {
+    name: 'Groq',
+    id: 'groq',
+    baseUrl: 'https://api.groq.com/openai/v1',
+    defaultModel: 'llama-3.3-70b-versatile',
+    placeholder: 'gsk_...',
+    badge: 'Ultra Fast LPU',
+  },
+  {
+    name: 'DeepSeek',
+    id: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    defaultModel: 'deepseek-chat',
+    placeholder: 'sk-...',
+    badge: 'DeepSeek V3',
+  },
+]
+
+const MODEL_SUGGESTIONS = [
+  {
+    model: 'google/gemini-2.0-flash-001',
+    label: 'Gemini 2.0 Flash',
+    desc: 'Fast, cheap & accurate',
+  },
+  {
+    model: 'anthropic/claude-3.5-sonnet',
+    label: 'Claude 3.5 Sonnet',
+    desc: 'Top literary prose',
+  },
+  {
+    model: 'deepseek/deepseek-chat',
+    label: 'DeepSeek V3',
+    desc: 'Smart & cost-efficient',
+  },
+  {
+    model: 'meta-llama/llama-3.3-70b-instruct',
+    label: 'Llama 3.3 70B',
+    desc: 'Open weights powerhouse',
+  },
+  {
+    model: 'openai/gpt-4o-mini',
+    label: 'GPT-4o Mini',
+    desc: 'Fast and reliable',
+  },
+]
 
 const COLOR_PRESETS = [
   { name: 'Blue', hex: '#2563eb' },
@@ -62,6 +130,13 @@ export default function BlogSettingsPage() {
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [testingAi, setTestingAi] = useState(false)
   const [aiTestResult, setAiTestResult] = useState<AiTestResult | null>(null)
+  const [aiApiKey, setAiApiKey] = useState('')
+  const [aiBaseUrl, setAiBaseUrl] = useState('')
+  const [aiModel, setAiModel] = useState('')
+  const [showAiKey, setShowAiKey] = useState(false)
+  const [savingAi, setSavingAi] = useState(false)
+  const [aiSaveMessage, setAiSaveMessage] = useState('')
+  const [aiSaveError, setAiSaveError] = useState('')
 
   // General state
   const [title, setTitle] = useState('')
@@ -110,6 +185,9 @@ export default function BlogSettingsPage() {
         setCodeHead(b.codeHead || '')
         setCodeFoot(b.codeFoot || '')
         setDarkModeEnabled(b.darkModeEnabled ?? true)
+        setAiApiKey(b.aiApiKey || '')
+        setAiBaseUrl(b.aiBaseUrl || '')
+        setAiModel(b.aiModel || '')
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -121,17 +199,85 @@ export default function BlogSettingsPage() {
     setTestingAi(true)
     setAiTestResult(null)
     try {
-      const res = await api.ai.test(blogId)
+      const payload: { apiKey?: string; baseUrl?: string; model?: string } = {}
+      if (aiApiKey && !aiApiKey.includes('••••')) {
+        payload.apiKey = aiApiKey.trim()
+      }
+      if (aiBaseUrl.trim()) {
+        payload.baseUrl = aiBaseUrl.trim()
+      }
+      if (aiModel.trim()) {
+        payload.model = aiModel.trim()
+      }
+      const res = await api.ai.test(blogId, payload)
       setAiTestResult(res)
     } catch (err: any) {
       setAiTestResult({
         success: false,
         provider: aiStatus?.provider || 'OpenRouter',
-        model: aiStatus?.model || '',
+        model: aiModel.trim() || aiStatus?.model || '',
         error: err.message || 'Connection test failed',
       })
     } finally {
       setTestingAi(false)
+    }
+  }
+
+  const handleSaveAiSettings = async () => {
+    setSavingAi(true)
+    setAiSaveError('')
+    setAiSaveMessage('')
+    try {
+      const updated = await api.blogs.update(blogId, {
+        aiApiKey: aiApiKey.trim(),
+        aiBaseUrl: aiBaseUrl.trim(),
+        aiModel: aiModel.trim(),
+      })
+      setBlog(updated)
+      setAiApiKey(updated.aiApiKey || '')
+      setAiBaseUrl(updated.aiBaseUrl || '')
+      setAiModel(updated.aiModel || '')
+      setAiSaveMessage('AI configuration saved successfully!')
+      const newStatus = await api.ai.status(blogId)
+      setAiStatus(newStatus)
+    } catch (err: any) {
+      setAiSaveError(err.message || 'Failed to save AI configuration')
+    } finally {
+      setSavingAi(false)
+    }
+  }
+
+  const handleClearCustomAiKey = async () => {
+    if (!confirm('Are you sure you want to remove the custom AI API key and revert to the system default configuration?')) {
+      return
+    }
+    setSavingAi(true)
+    setAiSaveError('')
+    setAiSaveMessage('')
+    try {
+      const updated = await api.blogs.update(blogId, {
+        aiApiKey: '',
+        aiBaseUrl: '',
+        aiModel: '',
+      })
+      setBlog(updated)
+      setAiApiKey('')
+      setAiBaseUrl('')
+      setAiModel('')
+      setAiSaveMessage('Custom AI key removed. Reverted to system default settings.')
+      const newStatus = await api.ai.status(blogId)
+      setAiStatus(newStatus)
+    } catch (err: any) {
+      setAiSaveError(err.message || 'Failed to reset AI settings')
+    } finally {
+      setSavingAi(false)
+    }
+  }
+
+  const handleSelectProviderPreset = (preset: typeof PROVIDER_PRESETS[number]) => {
+    setAiBaseUrl(preset.baseUrl)
+    if (!aiModel || PROVIDER_PRESETS.some((p) => p.defaultModel === aiModel)) {
+      setAiModel(preset.defaultModel)
     }
   }
 
@@ -189,6 +335,9 @@ export default function BlogSettingsPage() {
         codeHead,
         codeFoot,
         darkModeEnabled,
+        aiApiKey: aiApiKey.trim() || undefined,
+        aiBaseUrl: aiBaseUrl.trim() || undefined,
+        aiModel: aiModel.trim() || undefined,
       })
       setBlog(updated)
       setMessage('Blog settings saved successfully!')
@@ -704,6 +853,7 @@ export default function BlogSettingsPage() {
         {/* TAB 4: AI & OpenRouter Connection */}
         {activeTab === 'ai' && (
           <div className="space-y-6">
+            {/* Top Overview & Status Card */}
             <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-100">
                 <div className="flex items-center gap-3">
@@ -719,6 +869,16 @@ export default function BlogSettingsPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {blog?.hasCustomAiKey ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                      <Key className="h-3 w-3" />
+                      Blog-Specific Key
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      System Default (.env)
+                    </span>
+                  )}
                   <span
                     className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium ${
                       aiStatus?.configured
@@ -763,22 +923,204 @@ export default function BlogSettingsPage() {
                   </p>
                 </div>
               </div>
+            </div>
 
-              {/* Connection Test Action */}
-              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <p className="text-xs text-zinc-500">
-                  Verify that your API key is authentic and OpenRouter is reachable.
+            {/* Interactive Configuration Card */}
+            <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-6">
+              <div>
+                <h4 className="text-sm font-bold text-zinc-900 tracking-tight">Blog AI Configuration</h4>
+                <p className="text-xs text-zinc-500 mt-1">
+                  Configure your own API credentials for this blog or switch between AI providers.
                 </p>
+              </div>
+
+              {/* Provider Presets */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+                  Quick Provider Presets
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {PROVIDER_PRESETS.map((preset) => {
+                    const isSelected =
+                      aiBaseUrl === preset.baseUrl ||
+                      (!aiBaseUrl && preset.id === 'openrouter')
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => handleSelectProviderPreset(preset)}
+                        className={`flex flex-col text-left p-3 rounded-lg border transition ${
+                          isSelected
+                            ? 'border-purple-600 bg-purple-50/50 shadow-sm'
+                            : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-bold text-zinc-900">{preset.name.split(' ')[0]}</span>
+                          {isSelected && <Check className="h-3.5 w-3.5 text-purple-600" />}
+                        </div>
+                        <span className="text-[11px] text-zinc-500 mt-1">{preset.badge}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* API Key Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+                    API Key
+                  </label>
+                  {blog?.hasCustomAiKey && (
+                    <span className="text-[11px] font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+                      Saved Key Active
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showAiKey ? 'text' : 'password'}
+                    value={aiApiKey}
+                    onChange={(e) => setAiApiKey(e.target.value)}
+                    placeholder={
+                      blog?.hasCustomAiKey
+                        ? blog.aiApiKey || '••••••••••••••••'
+                        : 'sk-or-v1-xxxxxxxxxxxxxxxxxxxx'
+                    }
+                    className="w-full rounded-lg border border-zinc-300 py-2 pl-3 pr-20 text-sm font-mono focus:border-purple-600 focus:outline-none"
+                  />
+                  <div className="absolute right-2 top-2 flex items-center gap-1 text-zinc-400">
+                    <button
+                      type="button"
+                      onClick={() => setShowAiKey(!showAiKey)}
+                      className="p-1 hover:text-zinc-600 rounded"
+                      title={showAiKey ? 'Hide key' : 'Show key'}
+                    >
+                      {showAiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                    {aiApiKey && (
+                      <button
+                        type="button"
+                        onClick={() => setAiApiKey('')}
+                        className="p-1 hover:text-red-600 rounded text-xs font-sans font-medium"
+                        title="Clear input"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[11px] text-zinc-500">
+                  {blog?.hasCustomAiKey
+                    ? 'A custom key is saved. Leave blank or masked to keep it, or type a new key to update.'
+                    : 'No custom key set. The blog uses the system environment variable default unless overridden here.'}
+                </p>
+              </div>
+
+              {/* Model Identifier & Suggestions */}
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+                  Model Identifier
+                </label>
+                <input
+                  type="text"
+                  value={aiModel}
+                  onChange={(e) => setAiModel(e.target.value)}
+                  placeholder="google/gemini-2.0-flash-001"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-purple-600 focus:outline-none"
+                />
+
+                <div className="pt-1">
+                  <span className="text-[11px] text-zinc-500 font-medium block mb-1.5">
+                    Recommended Model Suggestions (click to apply):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {MODEL_SUGGESTIONS.map((item) => (
+                      <button
+                        key={item.model}
+                        type="button"
+                        onClick={() => setAiModel(item.model)}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition ${
+                          aiModel === item.model
+                            ? 'border-purple-600 bg-purple-50 text-purple-700 font-semibold'
+                            : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        <span className="text-[10px] text-zinc-400 font-mono">({item.desc})</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Base URL (Optional) */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+                  API Base URL (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={aiBaseUrl}
+                  onChange={(e) => setAiBaseUrl(e.target.value)}
+                  placeholder="https://openrouter.ai/api/v1"
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-purple-600 focus:outline-none"
+                />
+                <p className="text-[11px] text-zinc-500">
+                  Leave empty to default to OpenRouter gateway (<code className="font-mono text-zinc-700">https://openrouter.ai/api/v1</code>).
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-4 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <button
                   type="button"
                   disabled={testingAi}
                   onClick={handleTestAiConnection}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 disabled:opacity-50 transition shrink-0"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 disabled:opacity-50 transition"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 ${testingAi ? 'animate-spin' : ''}`} />
-                  <span>{testingAi ? 'Testing Connection...' : 'Test Connection'}</span>
+                  <span>{testingAi ? 'Testing Live Connection...' : 'Test Connection'}</span>
                 </button>
+
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {blog?.hasCustomAiKey && (
+                    <button
+                      type="button"
+                      disabled={savingAi}
+                      onClick={handleClearCustomAiKey}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 transition"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Revert to Default</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    disabled={savingAi}
+                    onClick={handleSaveAiSettings}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 disabled:opacity-50 transition"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    <span>{savingAi ? 'Saving...' : 'Save AI Settings'}</span>
+                  </button>
+                </div>
               </div>
+
+              {/* Feedback Alerts */}
+              {aiSaveMessage && (
+                <div className="rounded-lg bg-emerald-50 p-3.5 text-xs text-emerald-800 border border-emerald-200 flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <span>{aiSaveMessage}</span>
+                </div>
+              )}
+              {aiSaveError && (
+                <div className="rounded-lg bg-red-50 p-3.5 text-xs text-red-700 border border-red-200 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
+                  <span>{aiSaveError}</span>
+                </div>
+              )}
 
               {/* Live Test Results Alert */}
               {aiTestResult && (
@@ -792,20 +1134,20 @@ export default function BlogSettingsPage() {
                   <div className="flex items-center gap-2 font-bold mb-1">
                     {aiTestResult.success ? (
                       <>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                         <span>Connection Verified Successfully</span>
                       </>
                     ) : (
                       <>
-                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
                         <span>Connection Failed</span>
                       </>
                     )}
                   </div>
                   <p className="mt-1">{aiTestResult.message || aiTestResult.error}</p>
                   {aiTestResult.latencyMs && (
-                    <span className="text-[11px] text-zinc-500 block mt-1">
-                      Roundtrip latency: {aiTestResult.latencyMs}ms &bull; Model: {aiTestResult.model}
+                    <span className="text-[11px] text-zinc-500 block mt-1.5 font-sans">
+                      Roundtrip latency: <strong className="font-mono">{aiTestResult.latencyMs}ms</strong> &bull; Tested model: <code className="font-mono text-purple-700">{aiTestResult.model}</code>
                     </span>
                   )}
                 </div>
@@ -814,47 +1156,32 @@ export default function BlogSettingsPage() {
 
             {/* OpenRouter Setup Guide Card */}
             <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
-              <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">
-                How to Connect OpenRouter
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">
+                  About OpenRouter & LLM Integration
+                </h4>
+                <a
+                  href="https://openrouter.ai/keys"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  <span>Get API Key</span>
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
 
               <div className="space-y-3 text-xs text-zinc-600 leading-relaxed">
                 <p>
-                  1. Obtain an API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold underline">openrouter.ai/keys</a>.
+                  OpenRouter is a unified AI router providing access to top models from Google, Anthropic, DeepSeek, Meta, and OpenAI under a single API key and billing account.
                 </p>
                 <p>
-                  2. Add <code className="px-1.5 py-0.5 rounded bg-zinc-100 font-mono text-zinc-900 border border-zinc-200">OPENROUTER_API_KEY</code> to your <code className="font-mono text-zinc-800">.env</code> or Docker Compose file:
+                  In TopLog, your configured LLM powers:
                 </p>
-              </div>
-
-              <div className="rounded-lg bg-zinc-950 p-4 text-xs font-mono text-zinc-100 overflow-x-auto border border-zinc-800">
-                <p className="text-zinc-500"># OpenRouter Configuration</p>
-                <p className="text-emerald-400">OPENROUTER_API_KEY=<span className="text-zinc-400">sk-or-v1-xxxxxxxxxxxxxxxxxxxx</span></p>
-                <p className="text-emerald-400">AI_MODEL=<span className="text-zinc-400">google/gemini-2.0-flash-001</span></p>
-              </div>
-
-              <div className="pt-2">
-                <span className="text-xs font-semibold text-zinc-800 block mb-2">
-                  Popular Models on OpenRouter:
-                </span>
-                <div className="grid gap-2 sm:grid-cols-2 text-xs">
-                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
-                    <p className="font-mono font-bold text-zinc-900">google/gemini-2.0-flash-001</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">Ultra fast, high translation accuracy, lowest cost</p>
-                  </div>
-                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
-                    <p className="font-mono font-bold text-zinc-900">anthropic/claude-3.5-sonnet</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">World-class prose, literary and editorial localization</p>
-                  </div>
-                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
-                    <p className="font-mono font-bold text-zinc-900">deepseek/deepseek-chat</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">DeepSeek V3, exceptional reasoning and technical accuracy</p>
-                  </div>
-                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
-                    <p className="font-mono font-bold text-zinc-900">meta-llama/llama-3.3-70b-instruct</p>
-                    <p className="text-[11px] text-zinc-500 mt-0.5">Open-weights powerhouse, reliable structured JSON output</p>
-                  </div>
-                </div>
+                <ul className="list-disc pl-5 space-y-1 text-zinc-700">
+                  <li><strong>Instant 1-Click Translation:</strong> Translate your posts and metadata across dozens of languages while preserving markdown and HTML formatting.</li>
+                  <li><strong>Automated SEO Optimization:</strong> Generate search-optimized meta titles, descriptions, and keywords directly inside the post editor.</li>
+                </ul>
               </div>
             </div>
           </div>
