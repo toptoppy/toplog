@@ -1,4 +1,4 @@
-# Modern Multi-Tenant Blogging Platform
+# TopLog
 
 <p align="center">
   <strong>High-Performance Publishing Engine &amp; Modern Content Studio</strong>
