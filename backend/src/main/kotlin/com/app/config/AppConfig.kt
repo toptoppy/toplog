@@ -20,6 +20,7 @@ data class AppConfig(
 ) {
     companion object {
         fun fromApplicationConfig(config: ApplicationConfig): AppConfig {
+            val (resolvedApiKey, resolvedBaseUrl, resolvedModel) = resolveAiSettings(config)
             return AppConfig(
                 dbUrl = config.tryGetString("database.url") ?: "jdbc:postgresql://localhost:5432/blogdb",
                 dbUser = config.tryGetString("database.user") ?: "postgres",
@@ -32,10 +33,36 @@ data class AppConfig(
                 jwtExpirationMs = config.tryGetString("jwt.expirationMs")?.toLongOrNull() ?: 86400000L,
                 uploadsDir = config.tryGetString("storage.uploadsDir") ?: "uploads",
                 baseDomain = config.tryGetString("app.baseDomain") ?: "localhost",
-                aiApiKey = config.tryGetString("ai.apiKey") ?: System.getenv("AI_API_KEY"),
-                aiBaseUrl = config.tryGetString("ai.baseUrl") ?: System.getenv("AI_BASE_URL") ?: "https://api.openai.com/v1",
-                aiModel = config.tryGetString("ai.model") ?: System.getenv("AI_MODEL") ?: "gpt-4o-mini"
+                aiApiKey = resolvedApiKey,
+                aiBaseUrl = resolvedBaseUrl,
+                aiModel = resolvedModel
             )
+        }
+
+        private fun resolveAiSettings(config: ApplicationConfig): Triple<String?, String, String> {
+            val openrouterKey = (config.tryGetString("ai.openrouterApiKey") ?: System.getenv("OPENROUTER_API_KEY"))?.takeIf { it.isNotBlank() }
+            val genericAiKey = (config.tryGetString("ai.apiKey") ?: System.getenv("AI_API_KEY"))?.takeIf { it.isNotBlank() }
+            val resolvedApiKey = genericAiKey ?: openrouterKey
+
+            val defaultBaseUrl = if (!openrouterKey.isNullOrBlank() && genericAiKey.isNullOrBlank()) {
+                "https://openrouter.ai/api/v1"
+            } else {
+                "https://api.openai.com/v1"
+            }
+
+            val defaultModel = if (!openrouterKey.isNullOrBlank() && genericAiKey.isNullOrBlank()) {
+                "google/gemini-2.0-flash-001"
+            } else {
+                "gpt-4o-mini"
+            }
+
+            val resolvedBaseUrl = (config.tryGetString("ai.baseUrl") ?: System.getenv("AI_BASE_URL"))?.takeIf { it.isNotBlank() }
+                ?: defaultBaseUrl
+
+            val resolvedModel = (config.tryGetString("ai.model") ?: System.getenv("AI_MODEL"))?.takeIf { it.isNotBlank() }
+                ?: defaultModel
+
+            return Triple(resolvedApiKey, resolvedBaseUrl, resolvedModel)
         }
     }
 }

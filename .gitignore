@@ -20,6 +20,7 @@ console/out/
 node_modules/
 
 # Environment Local Secrets
+.env
 .env.local
 .env.production.local
 .env.development.local

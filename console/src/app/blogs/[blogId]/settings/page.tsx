@@ -22,7 +22,11 @@ import {
   Download,
   Moon,
   Archive,
+  Sparkles,
+  Bot,
+  Zap,
 } from 'lucide-react'
+import { AiStatus, AiTestResult } from '@/lib/types'
 
 const COLOR_PRESETS = [
   { name: 'Blue', hex: '#2563eb' },
@@ -52,7 +56,12 @@ export default function BlogSettingsPage() {
   const faviconInputRef = useRef<HTMLInputElement>(null)
 
   const [blog, setBlog] = useState<Blog | null>(null)
-  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'code'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'branding' | 'code' | 'ai'>('general')
+
+  // AI Connection State
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
+  const [testingAi, setTestingAi] = useState(false)
+  const [aiTestResult, setAiTestResult] = useState<AiTestResult | null>(null)
 
   // General state
   const [title, setTitle] = useState('')
@@ -104,7 +113,27 @@ export default function BlogSettingsPage() {
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
+
+    api.ai.status(blogId).then(setAiStatus).catch(console.error)
   }, [blogId])
+
+  const handleTestAiConnection = async () => {
+    setTestingAi(true)
+    setAiTestResult(null)
+    try {
+      const res = await api.ai.test(blogId)
+      setAiTestResult(res)
+    } catch (err: any) {
+      setAiTestResult({
+        success: false,
+        provider: aiStatus?.provider || 'OpenRouter',
+        model: aiStatus?.model || '',
+        error: err.message || 'Connection test failed',
+      })
+    } finally {
+      setTestingAi(false)
+    }
+  }
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -199,7 +228,7 @@ export default function BlogSettingsPage() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="w-full p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Blog Settings</h1>
         <p className="text-sm text-slate-500 mt-1">
@@ -258,6 +287,19 @@ export default function BlogSettingsPage() {
         >
           <Code2 className="h-4 w-4" />
           Code Injection
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ai')}
+          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+            activeTab === 'ai'
+              ? 'border-purple-600 text-purple-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Sparkles className="h-4 w-4 text-purple-600" />
+          AI & OpenRouter
         </button>
       </div>
 
@@ -659,16 +701,177 @@ export default function BlogSettingsPage() {
           </div>
         )}
 
-        <div className="pt-2 flex justify-end">
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50 transition"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? 'Saving...' : 'Save Settings'}
-          </button>
-        </div>
+        {/* TAB 4: AI & OpenRouter Connection */}
+        {activeTab === 'ai' && (
+          <div className="space-y-6">
+            <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 border border-purple-200/80 text-purple-600">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-zinc-900 tracking-tight">OpenRouter & LLM Engine</h3>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      Powers 1-click multilingual translation and automated SEO optimization.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium ${
+                      aiStatus?.configured
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                    }`}
+                  >
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        aiStatus?.configured ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'
+                      }`}
+                    />
+                    {aiStatus?.configured ? 'Connected' : 'Not Configured'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status details grid */}
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
+                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+                    Active Provider
+                  </span>
+                  <p className="mt-1.5 text-sm font-bold text-zinc-900">{aiStatus?.provider || 'OpenRouter'}</p>
+                </div>
+
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
+                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+                    Active Model
+                  </span>
+                  <p className="mt-1.5 text-xs font-mono font-medium text-purple-700 truncate">
+                    {aiStatus?.model || 'google/gemini-2.0-flash-001'}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
+                  <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+                    API Endpoint
+                  </span>
+                  <p className="mt-1.5 text-xs font-mono text-zinc-600 truncate">
+                    {aiStatus?.baseUrl || 'https://openrouter.ai/api/v1'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Connection Test Action */}
+              <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-xs text-zinc-500">
+                  Verify that your API key is authentic and OpenRouter is reachable.
+                </p>
+                <button
+                  type="button"
+                  disabled={testingAi}
+                  onClick={handleTestAiConnection}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 disabled:opacity-50 transition shrink-0"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${testingAi ? 'animate-spin' : ''}`} />
+                  <span>{testingAi ? 'Testing Connection...' : 'Test Connection'}</span>
+                </button>
+              </div>
+
+              {/* Live Test Results Alert */}
+              {aiTestResult && (
+                <div
+                  className={`rounded-lg p-4 text-xs font-mono border ${
+                    aiTestResult.success
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-red-50 text-red-700 border-red-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 font-bold mb-1">
+                    {aiTestResult.success ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span>Connection Verified Successfully</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <span>Connection Failed</span>
+                      </>
+                    )}
+                  </div>
+                  <p className="mt-1">{aiTestResult.message || aiTestResult.error}</p>
+                  {aiTestResult.latencyMs && (
+                    <span className="text-[11px] text-zinc-500 block mt-1">
+                      Roundtrip latency: {aiTestResult.latencyMs}ms &bull; Model: {aiTestResult.model}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* OpenRouter Setup Guide Card */}
+            <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+              <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">
+                How to Connect OpenRouter
+              </h4>
+
+              <div className="space-y-3 text-xs text-zinc-600 leading-relaxed">
+                <p>
+                  1. Obtain an API key from <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold underline">openrouter.ai/keys</a>.
+                </p>
+                <p>
+                  2. Add <code className="px-1.5 py-0.5 rounded bg-zinc-100 font-mono text-zinc-900 border border-zinc-200">OPENROUTER_API_KEY</code> to your <code className="font-mono text-zinc-800">.env</code> or Docker Compose file:
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-zinc-950 p-4 text-xs font-mono text-zinc-100 overflow-x-auto border border-zinc-800">
+                <p className="text-zinc-500"># OpenRouter Configuration</p>
+                <p className="text-emerald-400">OPENROUTER_API_KEY=<span className="text-zinc-400">sk-or-v1-xxxxxxxxxxxxxxxxxxxx</span></p>
+                <p className="text-emerald-400">AI_MODEL=<span className="text-zinc-400">google/gemini-2.0-flash-001</span></p>
+              </div>
+
+              <div className="pt-2">
+                <span className="text-xs font-semibold text-zinc-800 block mb-2">
+                  Popular Models on OpenRouter:
+                </span>
+                <div className="grid gap-2 sm:grid-cols-2 text-xs">
+                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
+                    <p className="font-mono font-bold text-zinc-900">google/gemini-2.0-flash-001</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Ultra fast, high translation accuracy, lowest cost</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
+                    <p className="font-mono font-bold text-zinc-900">anthropic/claude-3.5-sonnet</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">World-class prose, literary and editorial localization</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
+                    <p className="font-mono font-bold text-zinc-900">deepseek/deepseek-chat</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">DeepSeek V3, exceptional reasoning and technical accuracy</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-zinc-200 bg-zinc-50/50">
+                    <p className="font-mono font-bold text-zinc-900">meta-llama/llama-3.3-70b-instruct</p>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">Open-weights powerhouse, reliable structured JSON output</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab !== 'ai' && (
+          <div className="pt-2 flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? 'Saving...' : 'Save Settings'}
+            </button>
+          </div>
+        )}
       </form>
     </div>
   )

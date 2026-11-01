@@ -270,6 +270,31 @@ fun Route.consoleRoutes(
                         }
                     }
 
+                    // --- AI CONNECTION ---
+                    route("/ai") {
+                        get("/status") {
+                            call.respond(HttpStatusCode.OK, aiService.getStatus())
+                        }
+
+                        post("/test") {
+                            try {
+                                val result = aiService.testConnection()
+                                call.respond(HttpStatusCode.OK, result)
+                            } catch (err: Exception) {
+                                val status = aiService.getStatus()
+                                call.respond(
+                                    HttpStatusCode.OK,
+                                    AiTestResponseDto(
+                                        success = false,
+                                        provider = status.provider,
+                                        model = status.model,
+                                        error = err.message ?: "Failed to connect to AI provider"
+                                    )
+                                )
+                            }
+                        }
+                    }
+
                     // --- SUBSCRIBERS ---
                     route("/subscribers") {
                         get {

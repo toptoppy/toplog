@@ -1,5 +1,7 @@
 package com.app.service
 
+import com.app.api.dto.AiStatusDto
+import com.app.api.dto.AiTestResponseDto
 import com.app.config.AppConfig
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
@@ -41,8 +43,43 @@ class AiService(private val config: AppConfig) {
 
     private fun checkConfig() {
         if (config.aiApiKey.isNullOrBlank()) {
-            throw IllegalArgumentException("AI service is not configured. Please set AI_API_KEY in environment variables.")
+            throw IllegalArgumentException("AI service is not configured. Please set OPENROUTER_API_KEY or AI_API_KEY in environment variables.")
         }
+    }
+
+    fun getStatus(): AiStatusDto {
+        val isConfigured = !config.aiApiKey.isNullOrBlank()
+        val provider = when {
+            config.aiBaseUrl.contains("openrouter.ai") -> "OpenRouter"
+            config.aiBaseUrl.contains("openai.com") -> "OpenAI"
+            config.aiBaseUrl.contains("groq.com") -> "Groq"
+            config.aiBaseUrl.contains("deepseek.com") -> "DeepSeek"
+            config.aiBaseUrl.contains("googleapis.com") -> "Gemini"
+            else -> "Custom Provider"
+        }
+        return AiStatusDto(
+            configured = isConfigured,
+            provider = provider,
+            baseUrl = config.aiBaseUrl,
+            model = config.aiModel
+        )
+    }
+
+    suspend fun testConnection(): AiTestResponseDto {
+        checkConfig()
+        val startTime = System.currentTimeMillis()
+        val response = callChatCompletion(
+            systemPrompt = "You are an AI assistant. Reply with only 'CONNECTED'.",
+            userPrompt = "Test connection"
+        )
+        val latencyMs = System.currentTimeMillis() - startTime
+        return AiTestResponseDto(
+            success = true,
+            provider = getStatus().provider,
+            model = config.aiModel,
+            latencyMs = latencyMs,
+            message = "Successfully connected to ${getStatus().provider}! Latency: ${latencyMs}ms. Response: ${response.trim()}"
+        )
     }
 
     suspend fun translate(
@@ -136,6 +173,9 @@ class AiService(private val config: AppConfig) {
         val response = httpClient.post(endpoint) {
             header(HttpHeaders.Authorization, "Bearer ${config.aiApiKey}")
             contentType(ContentType.Application.Json)
+            // OpenRouter attribution headers
+            header("HTTP-Referer", "https://${config.baseDomain}")
+            header("X-Title", "TopLog")
             setBody(requestBody)
         }
 

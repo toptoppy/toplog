@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
-import { Blog, Post, PostStatus, PostVariant, PostRevision } from '@/lib/types'
+import { Blog, Post, PostStatus, PostVariant, PostRevision, AiStatus } from '@/lib/types'
 import TipTapEditor from '@/components/editor/TipTapEditor'
 import {
   ChevronLeft,
@@ -57,6 +57,7 @@ export default function PostStudioPage() {
   const [newLangCode, setNewLangCode] = useState('')
 
   // AI Assistant State
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
   const [showAiTranslateModal, setShowAiTranslateModal] = useState(false)
   const [targetAiLang, setTargetAiLang] = useState('')
   const [translating, setTranslating] = useState(false)
@@ -108,6 +109,8 @@ export default function PostStudioPage() {
       if (defaultVariant) {
         selectVariant(defaultVariant)
       }
+
+      api.ai.status(blogId).then(setAiStatus).catch(console.error)
     } catch (err) {
       console.error(err)
     } finally {
@@ -822,6 +825,18 @@ export default function PostStudioPage() {
                 <p className="text-xs text-zinc-500">
                   Translate from <strong>{activeLang.toUpperCase()}</strong> into another language.
                 </p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  {aiStatus?.configured ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                      {aiStatus.provider}: {aiStatus.model}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                      Requires OPENROUTER_API_KEY
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

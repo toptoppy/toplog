@@ -29,6 +29,8 @@ import {
   CommentStatus,
   VerifyDomainResult,
   PostRevision,
+  AiStatus,
+  AiTestResult,
 } from './types'
 
 const TOKEN_KEY = 'blog_auth_token'
@@ -198,6 +200,12 @@ export const api = {
   },
 
   ai: {
+    status: (blogId: number) =>
+      request<AiStatus>(`/api/console/blogs/${blogId}/ai/status`),
+    test: (blogId: number) =>
+      request<AiTestResult>(`/api/console/blogs/${blogId}/ai/test`, {
+        method: 'POST',
+      }),
     translate: (
       blogId: number,
       postId: number,

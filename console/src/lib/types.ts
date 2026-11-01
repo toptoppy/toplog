@@ -315,5 +315,22 @@ export interface PostRevision {
   wordCount: number
 }
 
+export interface AiStatus {
+  configured: boolean
+  provider: string
+  baseUrl: string
+  model: string
+}
+
+export interface AiTestResult {
+  success: boolean
+  provider: string
+  model: string
+  latencyMs?: number
+  message?: string
+  error?: string
+}
+
+
 
 

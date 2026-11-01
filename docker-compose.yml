@@ -62,9 +62,6 @@ services:
       JWT_AUDIENCE: ${JWT_AUDIENCE:-blogs-console}
       STORAGE_UPLOADS_DIR: /app/uploads
       APP_BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
-      AI_API_KEY: ${AI_API_KEY:-}
-      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
-      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
     volumes:
       - toplog_uploads_data:/app/uploads
     deploy:
