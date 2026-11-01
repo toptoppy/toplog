@@ -13,6 +13,10 @@ import {
   ExternalLink,
   FileText,
   Star,
+  Clock,
+  CheckCircle2,
+  FileEdit,
+  Sparkles,
 } from 'lucide-react'
 
 export default function PostsListPage() {
@@ -23,6 +27,7 @@ export default function PostsListPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [publicUrl, setPublicUrl] = useState('')
 
   const fetchPosts = async () => {
     try {
@@ -32,8 +37,23 @@ export default function PostsListPage() {
       ])
       setBlog(b)
       setPosts(p)
+
+      if (typeof window !== 'undefined') {
+        if (b.customDomain) {
+          setPublicUrl(`https://${b.customDomain}`)
+        } else {
+          const host = window.location.hostname
+          const proto = window.location.protocol
+          const parts = host.split('.')
+          let base = 'localhost'
+          if (parts.length > 1 && !host.endsWith('localhost')) {
+            base = parts.slice(1).join('.')
+          }
+          setPublicUrl(`${proto}//${b.subdomain}.${base}`)
+        }
+      }
     } catch (err) {
-      console.error(err)
+      console.error('Failed to load posts', err)
     } finally {
       setLoading(false)
     }
@@ -66,133 +86,173 @@ export default function PostsListPage() {
   if (loading || !blog) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-6 w-6 animate-spin rounded-full border-2 border-zinc-400 border-t-zinc-900"></div>
+          <span className="text-xs font-mono text-zinc-400">Loading articles...</span>
+        </div>
       </div>
     )
   }
 
+  const counts = {
+    ALL: posts.length,
+    PUBLISHED: posts.filter((p) => p.variant?.status === 'PUBLISHED').length,
+    SCHEDULED: posts.filter((p) => p.variant?.status === 'SCHEDULED').length,
+    DRAFT: posts.filter((p) => p.variant?.status === 'DRAFT').length,
+  }
+
   return (
-    <div className="p-8 max-w-6xl">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-8 max-w-6xl mx-auto space-y-6">
+      {/* Top Header Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-zinc-200/80">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Posts</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Create, edit, and publish posts and localized variants
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Posts</h1>
+            <span className="rounded-full bg-zinc-100 border border-zinc-200 px-2 py-0.5 text-xs font-mono font-medium text-zinc-600">
+              {posts.length}
+            </span>
+          </div>
+          <p className="text-sm text-zinc-500">
+            Write, localize, schedule, and publish articles across your publication.
           </p>
         </div>
         <Link
           href={`/blogs/${blogId}/posts/new`}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-blue-700 transition"
+          className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black transition self-start sm:self-auto"
         >
           <Plus className="h-4 w-4" />
-          New Post
+          <span>New Post</span>
         </Link>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+        {/* Search Input */}
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
           <input
             type="text"
-            placeholder="Search posts by title or slug..."
+            placeholder="Search by title or slug..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+            className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {['ALL', 'PUBLISHED', 'SCHEDULED', 'DRAFT'].map((s) => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition ${
-                statusFilter === s
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+        {/* Segmented Filter Control - Linear Style */}
+        <div className="inline-flex items-center p-1 rounded-lg bg-zinc-100 border border-zinc-200/80 self-start sm:self-auto overflow-x-auto">
+          {(['ALL', 'PUBLISHED', 'SCHEDULED', 'DRAFT'] as const).map((s) => {
+            const active = statusFilter === s
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  active
+                    ? 'bg-white text-zinc-900 shadow-sm font-semibold'
+                    : 'text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                <span>{s}</span>
+                <span
+                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                    active ? 'bg-zinc-100 text-zinc-700' : 'text-zinc-400'
+                  }`}
+                >
+                  {counts[s]}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Posts Table */}
-      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
         {filteredPosts.length === 0 ? (
-          <div className="p-12 text-center text-slate-500">
-            <FileText className="mx-auto h-12 w-12 text-slate-300 mb-3" />
-            <p className="text-base font-medium text-slate-900">No posts found</p>
-            <p className="text-sm text-slate-500 mt-1">
+          <div className="p-12 text-center text-zinc-500">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 mb-3">
+              <FileText className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-semibold text-zinc-900">No posts found</p>
+            <p className="text-xs text-zinc-500 mt-1">
               {search || statusFilter !== 'ALL'
-                ? 'Try adjusting your filters or search query.'
-                : 'Get started by creating your first post.'}
+                ? 'Try adjusting your filters or search keywords.'
+                : 'Get started by composing your first article.'}
             </p>
             {!search && statusFilter === 'ALL' && (
               <Link
                 href={`/blogs/${blogId}/posts/new`}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 transition"
+                className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 transition"
               >
-                <Plus className="h-4 w-4" />
-                Write Post
+                <Plus className="h-3.5 w-3.5" />
+                <span>Write Post</span>
               </Link>
             )}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-600">
-              <thead className="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+            <table className="w-full text-left text-xs text-zinc-600">
+              <thead className="bg-zinc-50/75 border-b border-zinc-100 text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500">
                 <tr>
-                  <th className="px-6 py-3.5">Title</th>
-                  <th className="px-4 py-3.5">Status</th>
-                  <th className="px-4 py-3.5">Language</th>
-                  <th className="px-4 py-3.5">Date</th>
-                  <th className="px-6 py-3.5 text-right">Actions</th>
+                  <th className="px-6 py-3">Title & Slug</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Language</th>
+                  <th className="px-4 py-3">Created</th>
+                  <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-zinc-100">
                 {filteredPosts.map((p) => {
                   const title = p.variant?.title || 'Untitled'
                   const slug = p.variant?.slug || ''
                   const status = p.variant?.status || 'DRAFT'
                   const lang = p.variant?.languageCode || blog.defaultLanguage
+                  const livePostUrl = publicUrl ? `${publicUrl}/${slug}` : null
 
                   return (
-                    <tr key={p.id} className="hover:bg-slate-50 transition">
+                    <tr key={p.id} className="hover:bg-zinc-50/80 transition group">
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2.5">
                           {p.isFeatured && (
-                            <Star className="h-4 w-4 text-amber-500 fill-amber-500 shrink-0" />
+                            <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0" />
                           )}
                           <div>
                             <Link
                               href={`/blogs/${blogId}/posts/${p.id}`}
-                              className="font-semibold text-slate-900 hover:text-blue-600 text-base"
+                              className="font-medium text-zinc-900 hover:text-blue-600 text-sm transition"
                             >
                               {title}
                             </Link>
-                            <p className="text-xs text-slate-400 mt-0.5">/{slug}</p>
+                            <p className="text-[11px] font-mono text-zinc-400 mt-0.5">/{slug}</p>
                           </div>
                         </div>
                       </td>
+
                       <td className="px-4 py-4">
                         <div className="flex flex-col items-start gap-1">
                           <span
-                            className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold uppercase ${
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-mono font-medium ${
                               status === 'PUBLISHED'
-                                ? 'bg-emerald-50 text-emerald-700'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                 : status === 'SCHEDULED'
-                                ? 'bg-purple-50 text-purple-700'
-                                : 'bg-amber-50 text-amber-700'
+                                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
                             }`}
                           >
+                            <span
+                              className={`h-1.5 w-1.5 rounded-full ${
+                                status === 'PUBLISHED'
+                                  ? 'bg-emerald-500'
+                                  : status === 'SCHEDULED'
+                                  ? 'bg-purple-500'
+                                  : 'bg-zinc-400'
+                              }`}
+                            />
                             {status}
                           </span>
                           {status === 'SCHEDULED' && p.variant?.scheduledAt && (
-                            <span className="text-[10px] text-purple-600 font-mono">
+                            <span className="text-[10px] font-mono text-purple-600">
                               {new Date(p.variant.scheduledAt).toLocaleString([], {
                                 month: 'short',
                                 day: 'numeric',
@@ -203,40 +263,47 @@ export default function PostsListPage() {
                           )}
                         </div>
                       </td>
+
                       <td className="px-4 py-4">
-                        <span className="rounded bg-slate-100 px-2 py-1 text-xs font-mono font-medium text-slate-700 uppercase">
+                        <span className="rounded bg-zinc-100 border border-zinc-200/80 px-2 py-0.5 text-[10px] font-mono font-medium text-zinc-700 uppercase">
                           {lang}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-slate-500 text-xs">
-                        {new Date(p.createdAt).toLocaleDateString()}
+
+                      <td className="px-4 py-4 text-zinc-500 text-xs">
+                        {new Date(p.createdAt).toLocaleDateString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
                       </td>
+
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {status === 'PUBLISHED' && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          {status === 'PUBLISHED' && livePostUrl && (
                             <a
-                              href={`http://${blog.subdomain}.localhost/${slug}`}
+                              href={livePostUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
+                              className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 transition"
                               title="View Live"
                             >
-                              <ExternalLink className="h-4 w-4" />
+                              <ExternalLink className="h-3.5 w-3.5" />
                             </a>
                           )}
                           <Link
                             href={`/blogs/${blogId}/posts/${p.id}`}
-                            className="rounded p-1.5 text-slate-500 hover:bg-slate-100 hover:text-blue-600 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition"
                             title="Edit Post"
                           >
-                            <Edit3 className="h-4 w-4" />
+                            <Edit3 className="h-3.5 w-3.5" />
                           </Link>
                           <button
                             onClick={() => handleDelete(p.id, title)}
-                            className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 transition"
                             title="Delete Post"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       </td>

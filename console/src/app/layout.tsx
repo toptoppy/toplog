@@ -3,8 +3,8 @@ import './globals.css'
 import { AuthProvider } from '@/lib/auth-context'
 
 export const metadata: Metadata = {
-  title: 'Blog Console',
-  description: 'Multi-tenant blogging platform admin console',
+  title: 'TopLog Studio',
+  description: 'High-performance multi-tenant blogging platform studio',
 }
 
 export default function RootLayout({
@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full bg-[#fcfcfd] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
