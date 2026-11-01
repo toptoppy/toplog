@@ -70,11 +70,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     let errorMsg = `HTTP Error ${res.status}`
     try {
-      const errorJson = await res.json()
-      if (errorJson.error) errorMsg = errorJson.error
-    } catch {
       const text = await res.text()
-      if (text) errorMsg = text
+      try {
+        const errorJson = JSON.parse(text)
+        if (errorJson.error) errorMsg = errorJson.error
+        else if (errorJson.message) errorMsg = errorJson.message
+      } catch {
+        if (text) errorMsg = text
+      }
+    } catch {
+      // Body could not be read
     }
     throw new Error(errorMsg)
   }
@@ -83,7 +88,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     return {} as T
   }
 
-  return res.json()
+  const text = await res.text()
+  if (!text) {
+    return {} as T
+  }
+
+  try {
+    return JSON.parse(text) as T
+  } catch {
+    return text as unknown as T
+  }
 }
 
 export const api = {

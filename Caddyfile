@@ -13,7 +13,17 @@
     @static path /_next/static/*
     header @static Cache-Control "public, max-age=31536000, immutable"
 
-    reverse_proxy console:3000
+    handle /api/* {
+        reverse_proxy backend:8080
+    }
+
+    handle /uploads/* {
+        reverse_proxy backend:8080
+    }
+
+    handle {
+        reverse_proxy console:3000
+    }
 }
 
 # 2. Main API & Dynamic Blog Subdomains (*.yourdomain.com)
