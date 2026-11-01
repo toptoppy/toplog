@@ -1,11 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
+import { api } from '@/lib/api'
 import {
   Bold,
   Italic,
@@ -21,6 +22,8 @@ import {
   Redo,
   Link as LinkIcon,
   ImageIcon,
+  Loader2,
+  Globe,
 } from 'lucide-react'
 
 interface TipTapEditorProps {
@@ -29,6 +32,7 @@ interface TipTapEditorProps {
   placeholder?: string
   onImageUpload?: () => void
   embedded?: boolean
+  blogId?: number
 }
 
 export default function TipTapEditor({
@@ -37,7 +41,35 @@ export default function TipTapEditor({
   placeholder = 'Write your story...',
   onImageUpload,
   embedded = false,
+  blogId,
 }: TipTapEditorProps) {
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const editorRef = useRef<any>(null)
+
+  const uploadAndInsertImage = async (file: File) => {
+    if (!blogId) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          editorRef.current?.chain().focus().setImage({ src: reader.result, alt: file.name }).run()
+        }
+      }
+      reader.readAsDataURL(file)
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const res = await api.media.upload(blogId, file)
+      editorRef.current?.chain().focus().setImage({ src: res.url, alt: file.name }).run()
+    } catch (err: any) {
+      alert(err.message || 'Image upload failed')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -61,12 +93,43 @@ export default function TipTapEditor({
     ],
     content: content || '<p></p>',
     immediatelyRender: false,
+    editorProps: {
+      handlePaste: (view, event) => {
+        const items = Array.from(event.clipboardData?.items || [])
+        for (const item of items) {
+          if (item.type.indexOf('image') === 0) {
+            const file = item.getAsFile()
+            if (file) {
+              event.preventDefault()
+              uploadAndInsertImage(file)
+              return true
+            }
+          }
+        }
+        return false
+      },
+      handleDrop: (view, event, slice, moved) => {
+        if (!moved && event.dataTransfer?.files?.length) {
+          const file = event.dataTransfer.files[0]
+          if (file.type.indexOf('image') === 0) {
+            event.preventDefault()
+            uploadAndInsertImage(file)
+            return true
+          }
+        }
+        return false
+      },
+    },
     onUpdate: ({ editor }) => {
       const html = editor.getHTML()
       const json = JSON.stringify(editor.getJSON())
       onChange(html, json)
     },
   })
+
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
 
   if (!editor) {
     return (
@@ -93,6 +156,27 @@ export default function TipTapEditor({
     const url = window.prompt('Enter Image URL')
     if (url) {
       editor.chain().focus().setImage({ src: url }).run()
+    }
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      uploadAndInsertImage(file)
+    }
+    // reset input value so re-selecting same file triggers onChange
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  const handleImageClick = () => {
+    if (onImageUpload) {
+      onImageUpload()
+    } else if (fileInputRef.current) {
+      fileInputRef.current.click()
+    } else {
+      addImageByUrl()
     }
   }
 
@@ -225,14 +309,42 @@ export default function TipTapEditor({
         <LinkIcon className="h-4 w-4" />
       </button>
 
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
       <button
         type="button"
-        onClick={onImageUpload || addImageByUrl}
-        className="rounded p-1.5 hover:bg-zinc-200/80 transition"
-        title="Insert Image"
+        disabled={uploadingImage}
+        onClick={handleImageClick}
+        className="rounded p-1.5 hover:bg-zinc-200/80 transition flex items-center gap-1 disabled:opacity-50"
+        title="Upload Image from computer (or drag & drop / paste)"
       >
-        <ImageIcon className="h-4 w-4" />
+        {uploadingImage ? (
+          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        ) : (
+          <ImageIcon className="h-4 w-4" />
+        )}
       </button>
+
+      <button
+        type="button"
+        onClick={addImageByUrl}
+        className="rounded p-1.5 hover:bg-zinc-200/80 transition"
+        title="Insert Image via Web URL"
+      >
+        <Globe className="h-4 w-4 text-zinc-500" />
+      </button>
+
+      {uploadingImage && (
+        <span className="text-[11px] font-mono text-blue-600 animate-pulse ml-1">
+          Uploading image...
+        </span>
+      )}
 
       <div className="h-4 w-px bg-zinc-200 mx-1"></div>
 

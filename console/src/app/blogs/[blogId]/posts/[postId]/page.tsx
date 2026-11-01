@@ -579,6 +579,7 @@ export default function PostStudioPage() {
             key={activeLang}
             content={contentHtml}
             embedded={true}
+            blogId={blogId}
             onChange={(html, json) => {
               setContentHtml(html)
               setContentJson(json)

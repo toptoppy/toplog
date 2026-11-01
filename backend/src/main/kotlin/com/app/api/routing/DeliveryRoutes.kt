@@ -195,7 +195,7 @@ fun Route.deliveryRoutes(
                 } else {
                     emptyList()
                 }
-                val view = deliveryService.renderSearch(blog, q, results)
+                val view = deliveryService.renderSearch(blog, q, results, baseUrl = baseUrl)
                 call.respondText(view.content, ContentType.Text.Html)
             }
 
@@ -203,14 +203,14 @@ fun Route.deliveryRoutes(
             path == "/unsubscribe" -> {
                 val token = call.request.queryParameters["token"] ?: ""
                 val success = if (token.isNotBlank()) newsletterService.unsubscribe(token) else false
-                val view = deliveryService.renderUnsubscribe(blog, success)
+                val view = deliveryService.renderUnsubscribe(blog, success, baseUrl = baseUrl)
                 call.respondText(view.content, ContentType.Text.Html)
             }
 
             // Tag archive (/tag/news, etc.)
             path.startsWith("/tag/") -> {
                 val tagSlug = path.removePrefix("/tag/").trim('/')
-                val view = deliveryService.renderTag(blog, tagSlug)
+                val view = deliveryService.renderTag(blog, tagSlug, baseUrl = baseUrl)
                 if (view != null) {
                     call.respondText(view.content, ContentType.Text.Html)
                 } else {
@@ -220,14 +220,14 @@ fun Route.deliveryRoutes(
 
             // Blog Homepage (/)
             path == "/" || path.isEmpty() -> {
-                val view = deliveryService.renderIndex(blog)
+                val view = deliveryService.renderIndex(blog, baseUrl = baseUrl)
                 call.respondText(view.content, ContentType.Text.Html)
             }
 
             // Single Post / Page by Slug (/{slug})
             else -> {
                 val slug = path.trim('/')
-                val view = deliveryService.renderPost(blog, slug)
+                val view = deliveryService.renderPost(blog, slug, baseUrl = baseUrl)
                 if (view != null) {
                     call.respondText(view.content, ContentType.Text.Html)
                 } else {

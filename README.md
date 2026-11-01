@@ -7,7 +7,9 @@
 </p>
 
 <p align="center">
-  <a href="docs/SETUP_GUIDE.md"><strong>Setup &amp; Deployment Guide &raquo;</strong></a>
+  <a href="docs/DEPLOYMENT.md"><strong>Production Deployment Guide &raquo;</strong></a>
+  <span> | </span>
+  <a href="docs/SETUP_GUIDE.md"><strong>Setup &amp; Config Guide &raquo;</strong></a>
   <span> | </span>
   <a href="docs/ARCHITECTURE.md"><strong>Architecture Deep Dive &raquo;</strong></a>
   <span> | </span>
@@ -20,7 +22,9 @@
 
 - **High-Performance Multi-Tenant Architecture**: Host unlimited blogs across subdomains (`*.localhost` or `*.yourdomain.com`) and custom domains from a single deployment.
 - **Modern Next.js 15 Console**: Fast, responsive administrative console built with Next.js 15 App Router, React 19, TypeScript, and Tailwind CSS.
-- **TipTap Rich Text Studio**: Visual block editor supporting Markdown shortcuts, code syntax highlighting, tables, embed blocks, and drag-and-drop media.
+- **TipTap Rich Text Studio with Media Drag & Drop**: Visual block editor supporting Markdown shortcuts, drag-and-drop and clipboard paste image uploads directly to local storage, and code formatting.
+- **Native OpenRouter & LLM Engine**: 1-click multilingual translation and automated SEO optimization powered by OpenRouter, OpenAI, Groq, or DeepSeek with key configuration directly in the UI.
+- **Code Syntax Highlighting with 1-Click Copy**: Built-in Highlight.js styling with One Dark palette and copy-to-clipboard buttons on all `<pre><code>` blocks in public reader posts.
 - **First-Class Internationalization**: Multi-language variants per post (`en`, `es`, `fr`, etc.) with independent slugs, metadata, and body content.
 - **Post Revision History & Rollback**: Automatic version snapshots recorded on every save, with a diff/preview modal and 1-click rollback in Post Studio.
 - **Dynamic Open Graph & Social Cards**: Auto-generated 1200×630 vector SVG social preview cards (`/api/og/:slug`) with ambient glowing gradients, reading time, and brand watermarks.
@@ -89,7 +93,8 @@ Add the following to your `/etc/hosts` file (macOS/Linux) or `C:\Windows\System3
 
 Detailed documentation is available in the [`docs/`](docs/) directory:
 
-- [**Setup & Deployment Guide**](docs/SETUP_GUIDE.md): Step-by-step setup, configuration parameters, custom domains, bare-metal development, and production hardening.
+- [**Production Deployment Guide**](docs/DEPLOYMENT.md): Production hosting instructions for cloud VPS (Hetzner, DigitalOcean, AWS), wildcard DNS, Caddy On-Demand TLS, and automated backups.
+- [**Setup & Config Guide**](docs/SETUP_GUIDE.md): Local development, environment configuration, custom domains, and platform architecture.
 - [**Architecture Deep Dive**](docs/ARCHITECTURE.md): Database ERD, subsystem internals, sequence diagrams, and security models.
 - [**Local Development Guide**](DEV.md): Running the Ktor backend and Next.js console natively on your local machine.
 

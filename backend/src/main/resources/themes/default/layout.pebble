@@ -18,13 +18,18 @@
     <meta property="og:description" content="{% block og_description %}{{ blog.description }}{% endblock %}">
     {% block og_image %}
     {% if post is not empty and post.slug is not empty %}
-    <meta property="og:image" content="/api/og/{{ post.slug }}">
-    <meta name="twitter:image" content="/api/og/{{ post.slug }}">
+    <meta property="og:image" content="{{ baseUrl }}/api/og/{{ post.slug }}">
+    <meta name="twitter:image" content="{{ baseUrl }}/api/og/{{ post.slug }}">
     {% endif %}
     {% endblock %}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}{{ blog.title }}{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}{{ blog.description }}{% endblock %}">
+    {% if post is not empty and post.slug is not empty %}
+    <link rel="canonical" href="{% if post.canonicalUrl %}{{ post.canonicalUrl }}{% else %}{{ baseUrl }}/{{ post.slug }}{% endif %}">
+    {% else %}
+    <link rel="canonical" href="{{ baseUrl }}/">
+    {% endif %}
 
     {% if blog.darkModeEnabled %}
     <script>
@@ -275,6 +280,38 @@
                 progBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
             }, { passive: true });
         }
+    })();
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+    (function() {
+        // --- 5. Code Syntax Highlighting & Copy Button ---
+        try {
+            if (window.hljs) {
+                hljs.highlightAll();
+            }
+        } catch (e) {}
+
+        document.querySelectorAll('pre').forEach(function(pre) {
+            var code = pre.querySelector('code') || pre;
+            var btn = document.createElement('button');
+            btn.className = 'code-copy-btn';
+            btn.type = 'button';
+            btn.setAttribute('aria-label', 'Copy code to clipboard');
+            btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
+            btn.addEventListener('click', function() {
+                var text = code.innerText;
+                navigator.clipboard.writeText(text).then(function() {
+                    btn.classList.add('copied');
+                    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Copied!</span>';
+                    setTimeout(function() {
+                        btn.classList.remove('copied');
+                        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><span>Copy</span>';
+                    }, 2000);
+                });
+            });
+            pre.appendChild(btn);
+        });
     })();
     </script>
 

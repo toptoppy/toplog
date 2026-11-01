@@ -36,7 +36,7 @@ class DeliveryService(
         "darkModeEnabled" to blog.darkModeEnabled
     )
 
-    suspend fun renderIndex(blog: Blog, languageCode: String = blog.defaultLanguage): RenderedView {
+    suspend fun renderIndex(blog: Blog, languageCode: String = blog.defaultLanguage, baseUrl: String? = null): RenderedView {
         val posts = dbQuery {
             (Posts innerJoin PostVariants).selectAll()
                 .where {
@@ -65,6 +65,7 @@ class DeliveryService(
             "blog" to blogToContext(blog),
             "posts" to posts,
             "language" to languageCode,
+            "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
         )
 
@@ -72,7 +73,7 @@ class DeliveryService(
         return RenderedView(html)
     }
 
-    suspend fun renderPost(blog: Blog, slug: String, languageCode: String = blog.defaultLanguage): RenderedView? {
+    suspend fun renderPost(blog: Blog, slug: String, languageCode: String = blog.defaultLanguage, baseUrl: String? = null): RenderedView? {
         val cleanSlug = slug.trim().lowercase()
 
         val postData = dbQuery {
@@ -129,6 +130,7 @@ class DeliveryService(
             "wordCount" to wordCount,
             "tags" to postData.second,
             "language" to languageCode,
+            "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
         )
 
@@ -136,7 +138,7 @@ class DeliveryService(
         return RenderedView(html)
     }
 
-    suspend fun renderTag(blog: Blog, tagSlug: String, languageCode: String = blog.defaultLanguage): RenderedView? {
+    suspend fun renderTag(blog: Blog, tagSlug: String, languageCode: String = blog.defaultLanguage, baseUrl: String? = null): RenderedView? {
         val cleanSlug = tagSlug.trim().lowercase()
 
         val tag = dbQuery {
@@ -176,6 +178,7 @@ class DeliveryService(
             ),
             "posts" to posts,
             "language" to languageCode,
+            "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
         )
 
@@ -187,7 +190,8 @@ class DeliveryService(
         blog: Blog,
         query: String,
         results: List<com.app.api.dto.SearchResultItemDto>,
-        languageCode: String = blog.defaultLanguage
+        languageCode: String = blog.defaultLanguage,
+        baseUrl: String? = null
     ): RenderedView {
         val context = mapOf(
             "blog" to blogToContext(blog),
@@ -195,6 +199,7 @@ class DeliveryService(
             "results" to results,
             "total" to results.size,
             "language" to languageCode,
+            "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
         )
         val html = pebbleRenderer.render("themes/${blog.themeName}/search.pebble", context)
@@ -203,7 +208,8 @@ class DeliveryService(
 
     suspend fun renderUnsubscribe(
         blog: Blog,
-        success: Boolean
+        success: Boolean,
+        baseUrl: String? = null
     ): RenderedView {
         val message = if (success) {
             "You have been successfully unsubscribed from this newsletter."
@@ -215,6 +221,7 @@ class DeliveryService(
             "success" to success,
             "message" to message,
             "language" to blog.defaultLanguage,
+            "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
         )
         val html = pebbleRenderer.render("themes/${blog.themeName}/unsubscribe.pebble", context)

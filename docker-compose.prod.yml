@@ -1,0 +1,141 @@
+name: toplog
+
+services:
+  db:
+    image: postgres:18-alpine
+    container_name: toplog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-blogdb}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set in production}
+    # Secure: do not expose postgres to the public internet in production
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - toplog_pg_data:/var/lib/postgresql
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=8MB"
+      - "-c"
+      - "random_page_cost=1.1"
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+        reservations:
+          memory: 128M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-blogdb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - toplog-net
+
+  backend:
+    image: ghcr.io/toptoppy/toplog-backend:${TOPLOG_VERSION:-latest}
+    container_name: toplog-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: jdbc:postgresql://db:5432/${DB_NAME:-blogdb}
+      DATABASE_USER: ${DB_USER:-postgres}
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in production}
+      JWT_ISSUER: ${JWT_ISSUER:-toplog-backend}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-toplog-console}
+      STORAGE_UPLOADS_DIR: /app/uploads
+      APP_BASE_DOMAIN: ${BASE_DOMAIN:?BASE_DOMAIN must be set (e.g. yourdomain.com)}
+    volumes:
+      - toplog_uploads_data:/app/uploads
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - toplog-net
+
+  console:
+    image: ghcr.io/toptoppy/toplog-console:${TOPLOG_VERSION:-latest}
+    container_name: toplog-console
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      BACKEND_API_URL: http://backend:8080
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - toplog-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: toplog-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    env_file:
+      - .env
+    environment:
+      BASE_DOMAIN: ${BASE_DOMAIN}
+      CONSOLE_DOMAIN: ${CONSOLE_DOMAIN:-console.${BASE_DOMAIN}}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - toplog_caddy_data:/data
+      - toplog_caddy_config:/config
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
+    depends_on:
+      backend:
+        condition: service_healthy
+      console:
+        condition: service_healthy
+    networks:
+      - toplog-net
+
+volumes:
+  toplog_pg_data:
+  toplog_uploads_data:
+  toplog_caddy_data:
+  toplog_caddy_config:
+
+networks:
+  toplog-net:
+    driver: bridge

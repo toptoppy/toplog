@@ -182,6 +182,7 @@ export default function NewPostPage() {
         <TipTapEditor
           content={contentHtml}
           embedded={true}
+          blogId={blogId}
           onChange={(html, json) => {
             setContentHtml(html)
             setContentJson(json)
