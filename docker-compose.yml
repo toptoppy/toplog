@@ -1,7 +1,9 @@
+name: toplog
+
 services:
   db:
     image: postgres:18-alpine
-    container_name: blog-postgres
+    container_name: toplog-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-blogdb}
@@ -10,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg_data:/var/lib/postgresql
+      - toplog_pg_data:/var/lib/postgresql
     command:
       - "postgres"
       - "-c"
@@ -39,13 +41,13 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - blog-net
+      - toplog-net
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: blog-backend
+    container_name: toplog-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
@@ -64,7 +66,7 @@ services:
       AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
       AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
     volumes:
-      - uploads_data:/app/uploads
+      - toplog_uploads_data:/app/uploads
     deploy:
       resources:
         limits:
@@ -75,13 +77,13 @@ services:
       db:
         condition: service_healthy
     networks:
-      - blog-net
+      - toplog-net
 
   console:
     build:
       context: ./console
       dockerfile: Dockerfile
-    container_name: blog-console
+    container_name: toplog-console
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -96,14 +98,21 @@ services:
           memory: 256M
         reservations:
           memory: 64M
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
-      - blog-net
+      - toplog-net
 
   caddy:
     image: caddy:2-alpine
-    container_name: blog-caddy
+    container_name: toplog-caddy
     restart: unless-stopped
     ports:
       - "80:80"
@@ -115,8 +124,8 @@ services:
       CONSOLE_DOMAIN: ${CONSOLE_DOMAIN:-console.localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
+      - toplog_caddy_data:/data
+      - toplog_caddy_config:/config
     deploy:
       resources:
         limits:
@@ -124,17 +133,19 @@ services:
         reservations:
           memory: 32M
     depends_on:
-      - backend
-      - console
+      backend:
+        condition: service_healthy
+      console:
+        condition: service_healthy
     networks:
-      - blog-net
+      - toplog-net
 
 volumes:
-  pg_data:
-  uploads_data:
-  caddy_data:
-  caddy_config:
+  toplog_pg_data:
+  toplog_uploads_data:
+  toplog_caddy_data:
+  toplog_caddy_config:
 
 networks:
-  blog-net:
+  toplog-net:
     driver: bridge
