@@ -17,6 +17,8 @@ RUN mkdir -p /app/uploads && chown -R appuser:appgroup /app
 
 COPY --from=builder --chown=appuser:appgroup /app/build/install/backend /app
 
+ENV JAVA_TOOL_OPTIONS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=25.0 -XX:+ExitOnOutOfMemoryError -XX:+UseStringDeduplication -Dfile.encoding=UTF-8"
+
 USER appuser
 
 EXPOSE 8080

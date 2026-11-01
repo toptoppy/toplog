@@ -18,6 +18,11 @@ object DatabaseFactory {
             password = config.dbPass
             driverClassName = "org.postgresql.Driver"
             maximumPoolSize = config.dbPoolSize
+            minimumIdle = minOf(2, config.dbPoolSize)
+            idleTimeout = 300_000 // 5 minutes
+            maxLifetime = 1_800_000 // 30 minutes
+            connectionTimeout = 10_000 // 10 seconds
+            leakDetectionThreshold = 60_000 // 60 seconds
             isAutoCommit = false
             transactionIsolation = "TRANSACTION_REPEATABLE_READ"
             validate()

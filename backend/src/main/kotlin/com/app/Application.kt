@@ -19,6 +19,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.calllogging.*
+import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
@@ -70,6 +71,17 @@ fun Application.module() {
             ignoreUnknownKeys = true
             encodeDefaults = true
         })
+    }
+
+    install(Compression) {
+        gzip {
+            priority = 1.0
+            minimumSize(1024)
+        }
+        deflate {
+            priority = 10.0
+            minimumSize(1024)
+        }
     }
 
     install(CORS) {

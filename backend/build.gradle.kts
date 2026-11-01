@@ -30,6 +30,7 @@ dependencies {
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-compression:$ktorVersion")
 
     // Database: Exposed, HikariCP, Flyway, PostgreSQL
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
