@@ -116,6 +116,7 @@
                 <input type="text" id="modal-search-input" placeholder="Search articles, topics, and guides..." autocomplete="off">
                 <button type="button" id="close-search-btn" class="search-modal-close" aria-label="Close search">&times;</button>
             </div>
+            <div id="modal-search-tags" class="search-modal-tags" style="display: none;"></div>
             <div id="modal-search-results" class="search-results-list">
                 <div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">
                     Type to start searching...
@@ -126,23 +127,108 @@
 
     <script>
     (function() {
-        // --- 1. Search Modal Behavior ---
+        // --- 1. Search Modal Behavior & Tag Filtering ---
         var modal = document.getElementById('search-modal');
         var openBtn = document.getElementById('open-search-btn');
         var closeBtn = document.getElementById('close-search-btn');
         var searchInput = document.getElementById('modal-search-input');
+        var tagsBar = document.getElementById('modal-search-tags');
         var resultsBox = document.getElementById('modal-search-results');
         var debounceTimer;
+        var activeTagSlug = null;
+        var loadedTags = false;
+
+        function loadTags() {
+            if (loadedTags) return;
+            fetch('/api/tags')
+                .then(function(r) { return r.json(); })
+                .then(function(tags) {
+                    if (!tags || tags.length === 0) return;
+                    loadedTags = true;
+                    tagsBar.style.display = 'flex';
+                    var html = '<button type="button" class="search-tag-chip active" data-tag="">All</button>';
+                    tags.forEach(function(t) {
+                        html += '<button type="button" class="search-tag-chip" data-tag="' + t.slug + '">#' + t.name + ' (' + t.postCount + ')</button>';
+                    });
+                    tagsBar.innerHTML = html;
+
+                    var chips = tagsBar.querySelectorAll('.search-tag-chip');
+                    chips.forEach(function(chip) {
+                        chip.addEventListener('click', function() {
+                            chips.forEach(function(c) { c.classList.remove('active'); });
+                            chip.classList.add('active');
+                            activeTagSlug = chip.getAttribute('data-tag') || null;
+                            executeSearch();
+                        });
+                    });
+                })
+                .catch(function(err) {
+                    console.debug('Failed to load public tags:', err);
+                });
+        }
 
         function openSearch() {
             modal.classList.add('active');
             searchInput.focus();
+            loadTags();
         }
 
         function closeSearch() {
             modal.classList.remove('active');
             searchInput.value = '';
+            activeTagSlug = null;
+            if (tagsBar) {
+                var chips = tagsBar.querySelectorAll('.search-tag-chip');
+                chips.forEach(function(c, i) {
+                    if (i === 0) c.classList.add('active'); else c.classList.remove('active');
+                });
+            }
             resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Type to start searching...</div>';
+        }
+
+        function executeSearch() {
+            var q = searchInput.value.trim();
+            if (!q && !activeTagSlug) {
+                resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Type to start searching or select a topic...</div>';
+                return;
+            }
+
+            resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Searching...</div>';
+
+            var url = '/api/search?q=' + encodeURIComponent(q);
+            if (activeTagSlug) {
+                url += '&tag=' + encodeURIComponent(activeTagSlug);
+            }
+
+            fetch(url)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (!data.results || data.results.length === 0) {
+                        var msg = q ? 'No articles found matching "' + q + '"' : 'No articles found in this topic';
+                        resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">' + msg + '</div>';
+                        return;
+                    }
+                    var html = '';
+                    data.results.forEach(function(item) {
+                        html += '<a href="/' + item.slug + '" class="search-result-item">';
+                        html += '<div class="search-result-title">' + (item.title || 'Untitled') + '</div>';
+                        if (item.description) {
+                            html += '<div class="search-result-desc">' + item.description + '</div>';
+                        }
+                        if (item.tags && item.tags.length > 0) {
+                            html += '<div class="search-item-meta">';
+                            item.tags.forEach(function(tg) {
+                                html += '<span class="search-item-tag">#' + tg + '</span>';
+                            });
+                            html += '</div>';
+                        }
+                        html += '</a>';
+                    });
+                    resultsBox.innerHTML = html;
+                })
+                .catch(function() {
+                    resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #dc2626; font-size: 0.9rem;">Search error. Please try again.</div>';
+                });
         }
 
         if (openBtn) openBtn.addEventListener('click', openSearch);
@@ -163,36 +249,7 @@
 
         searchInput.addEventListener('input', function() {
             clearTimeout(debounceTimer);
-            var q = searchInput.value.trim();
-            if (!q) {
-                resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Type to start searching...</div>';
-                return;
-            }
-
-            debounceTimer = setTimeout(function() {
-                resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">Searching...</div>';
-                fetch('/api/search?q=' + encodeURIComponent(q))
-                    .then(function(r) { return r.json(); })
-                    .then(function(data) {
-                        if (!data.results || data.results.length === 0) {
-                            resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #94a3b8; font-size: 0.9rem;">No articles found matching "' + q + '"</div>';
-                            return;
-                        }
-                        var html = '';
-                        data.results.forEach(function(item) {
-                            html += '<a href="/' + item.slug + '" class="search-result-item">';
-                            html += '<div class="search-result-title">' + (item.title || 'Untitled') + '</div>';
-                            if (item.description) {
-                                html += '<div class="search-result-desc">' + item.description + '</div>';
-                            }
-                            html += '</a>';
-                        });
-                        resultsBox.innerHTML = html;
-                    })
-                    .catch(function() {
-                        resultsBox.innerHTML = '<div style="padding: 1.5rem; text-align: center; color: #dc2626; font-size: 0.9rem;">Search error. Please try again.</div>';
-                    });
-            }, 250);
+            debounceTimer = setTimeout(executeSearch, 200);
         });
 
         // --- 2. Newsletter Subscription Form ---

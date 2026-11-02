@@ -1,9 +1,9 @@
 package com.app.service
 
 import com.app.api.dto.CreateTagRequest
+import com.app.api.dto.PublicTagDto
 import com.app.api.dto.TagDto
-import com.app.domain.model.Tag
-import com.app.domain.model.Tags
+import com.app.domain.model.*
 import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -15,6 +15,34 @@ class TagService {
             .where { Tags.blogId eq blogId }
             .orderBy(Tags.name to SortOrder.ASC)
             .map { it.toTag().toDto() }
+    }
+
+    suspend fun listPublicTags(blogId: Long): List<PublicTagDto> = dbQuery {
+        val blogTags = Tags.selectAll()
+            .where { Tags.blogId eq blogId }
+            .orderBy(Tags.name to SortOrder.ASC)
+            .toList()
+
+        blogTags.map { row ->
+            val tagId = row[Tags.id].value
+            // Count distinct published posts linked to this tag
+            val count = (PostTags innerJoin Posts innerJoin PostVariants)
+                .select(Posts.id)
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (PostTags.tagId eq tagId) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+                .withDistinct()
+                .count()
+
+            PublicTagDto(
+                id = tagId,
+                name = row[Tags.name],
+                slug = row[Tags.slug],
+                postCount = count
+            )
+        }.filter { it.postCount > 0 }
     }
 
     suspend fun createTag(blogId: Long, request: CreateTagRequest): TagDto {

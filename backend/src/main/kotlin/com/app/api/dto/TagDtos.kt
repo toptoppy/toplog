@@ -15,3 +15,12 @@ data class TagDto(
     val name: String,
     val slug: String
 )
+
+@Serializable
+data class PublicTagDto(
+    val id: Long,
+    val name: String,
+    val slug: String,
+    val postCount: Long = 0
+)
+

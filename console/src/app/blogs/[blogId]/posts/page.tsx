@@ -28,6 +28,8 @@ export default function PostsListPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [publicUrl, setPublicUrl] = useState('')
+  const [runningScheduler, setRunningScheduler] = useState(false)
+  const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null)
 
   const fetchPosts = async () => {
     try {
@@ -116,14 +118,53 @@ export default function PostsListPage() {
             Write, localize, schedule, and publish articles across your publication.
           </p>
         </div>
-        <Link
-          href={`/blogs/${blogId}/posts/new`}
-          className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black transition self-start sm:self-auto"
-        >
-          <Plus className="h-4 w-4" />
-          <span>New Post</span>
-        </Link>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+          {counts.SCHEDULED > 0 && (
+            <button
+              type="button"
+              disabled={runningScheduler}
+              onClick={async () => {
+                setRunningScheduler(true)
+                setSchedulerMessage(null)
+                try {
+                  const res = await api.posts.runScheduler(blogId)
+                  setSchedulerMessage(res.message)
+                  await fetchPosts()
+                } catch (err: any) {
+                  setSchedulerMessage(err.message || 'Scheduler check failed')
+                } finally {
+                  setRunningScheduler(false)
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3.5 py-2 text-xs font-semibold text-purple-700 shadow-sm hover:bg-purple-100 disabled:opacity-50 transition"
+              title="Immediately check and publish any scheduled posts that have reached their target time"
+            >
+              <Clock className={`h-3.5 w-3.5 ${runningScheduler ? 'animate-spin' : ''}`} />
+              <span>{runningScheduler ? 'Checking...' : 'Check Due Posts'}</span>
+            </button>
+          )}
+          <Link
+            href={`/blogs/${blogId}/posts/new`}
+            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black transition"
+          >
+            <Plus className="h-4 w-4" />
+            <span>New Post</span>
+          </Link>
+        </div>
       </div>
+
+      {schedulerMessage && (
+        <div className="rounded-lg bg-purple-50 p-3 text-xs font-mono text-purple-700 border border-purple-200 flex items-center justify-between">
+          <span>{schedulerMessage}</span>
+          <button
+            type="button"
+            onClick={() => setSchedulerMessage(null)}
+            className="text-purple-400 hover:text-purple-700 ml-2"
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">

@@ -16,6 +16,7 @@ fun Route.deliveryRoutes(
     blogService: BlogService,
     deliveryService: DeliveryService,
     postService: PostService,
+    tagService: TagService,
     newsletterService: NewsletterService,
     analyticsService: AnalyticsService,
     commentService: CommentService,
@@ -96,18 +97,15 @@ fun Route.deliveryRoutes(
         }
     }
 
-    // Public API: Instant Search Endpoint
+    // Public API: Instant Search Endpoint (supports ?q=... and/or ?tag=...)
     get("/api/search") {
         val host = call.request.host()
         val blog = blogService.findByHost(host, config.baseDomain)
             ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
 
         val query = call.request.queryParameters["q"] ?: ""
-        val results = if (query.isNotBlank()) {
-            postService.searchPublishedPosts(blog.id, query)
-        } else {
-            emptyList()
-        }
+        val tag = call.request.queryParameters["tag"]
+        val results = postService.searchPublishedPosts(blog.id, query, tagSlug = tag)
 
         call.respond(
             HttpStatusCode.OK,
@@ -117,6 +115,16 @@ fun Route.deliveryRoutes(
                 results = results
             )
         )
+    }
+
+    // Public API: Public Tags Listing with Article Counts
+    get("/api/tags") {
+        val host = call.request.host()
+        val blog = blogService.findByHost(host, config.baseDomain)
+            ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
+
+        val tags = tagService.listPublicTags(blog.id)
+        call.respond(HttpStatusCode.OK, tags)
     }
 
     // Public API: Member Newsletter Subscribe Endpoint
@@ -187,15 +195,12 @@ fun Route.deliveryRoutes(
                 call.respondText(sitemap.content, ContentType.parse(sitemap.contentType))
             }
 
-            // Full-Text Search Page (/search?q=...)
+            // Full-Text Search Page (/search?q=...&tag=...)
             path == "/search" -> {
                 val q = call.request.queryParameters["q"] ?: ""
-                val results = if (q.isNotBlank()) {
-                    postService.searchPublishedPosts(blog.id, q)
-                } else {
-                    emptyList()
-                }
-                val view = deliveryService.renderSearch(blog, q, results, baseUrl = baseUrl)
+                val tag = call.request.queryParameters["tag"]
+                val results = postService.searchPublishedPosts(blog.id, q, tagSlug = tag)
+                val view = deliveryService.renderSearch(blog, q, results, tagSlug = tag, baseUrl = baseUrl)
                 call.respondText(view.content, ContentType.Text.Html)
             }
 

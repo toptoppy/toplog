@@ -770,3 +770,157 @@ a:hover {
     color: #991b1b;
     border: 1px solid #fecaca;
 }
+
+/* ==========================================================================
+   Public Search Modal Tags & Filter Chips
+   ========================================================================== */
+.search-modal-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    background: #f8fafc;
+}
+.search-modal-tags::-webkit-scrollbar {
+    display: none;
+}
+[data-theme="dark"] .search-modal-tags {
+    background: #111827;
+}
+
+.search-tag-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+.search-tag-chip:hover {
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+.search-tag-chip.active {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+}
+
+.search-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+    flex-wrap: wrap;
+}
+.search-item-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    background: rgba(14, 165, 233, 0.1);
+    color: #0284c7;
+}
+[data-theme="dark"] .search-item-tag {
+    background: rgba(14, 165, 233, 0.2);
+    color: #38bdf8;
+}
+
+/* ==========================================================================
+   Homepage & Tag Navigation Bar
+   ========================================================================== */
+.home-tag-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding-bottom: 0.75rem;
+    scrollbar-width: none;
+    border-bottom: 1px solid var(--border-color);
+}
+.home-tag-bar::-webkit-scrollbar {
+    display: none;
+}
+.home-tag-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    text-decoration: none !important;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+.home-tag-pill:hover {
+    color: var(--text-color);
+    border-color: var(--primary-color);
+}
+.home-tag-pill.active {
+    background: var(--text-color);
+    color: var(--bg-card);
+    border-color: var(--text-color);
+}
+.home-tag-count {
+    font-size: 0.7rem;
+    opacity: 0.75;
+    background: rgba(125, 125, 125, 0.15);
+    border-radius: 9999px;
+    padding: 0.05rem 0.35rem;
+}
+
+/* ==========================================================================
+   Tag Archive Page Hero Banner
+   ========================================================================== */
+.tag-archive-hero {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.tag-archive-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+.tag-archive-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.5rem;
+}
+.tag-archive-meta {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+.tag-archive-siblings {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.25rem;
+    flex-wrap: wrap;
+}
+

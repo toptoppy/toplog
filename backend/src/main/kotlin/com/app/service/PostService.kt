@@ -62,20 +62,37 @@ class PostService(
         blogId: Long,
         rawQuery: String,
         languageCode: String? = null,
+        tagSlug: String? = null,
         limit: Int = 20
     ): List<SearchResultItemDto> = dbQuery {
         val q = rawQuery.trim().lowercase()
-        if (q.isBlank()) return@dbQuery emptyList()
+        val cleanTag = tagSlug?.trim()?.lowercase()?.ifEmpty { null }
+        if (q.isBlank() && cleanTag == null) return@dbQuery emptyList()
 
         val likePattern = "%$q%"
-        var query = (Posts innerJoin PostVariants).selectAll()
-            .where {
-                (Posts.blogId eq blogId) and
-                (PostVariants.status eq PostStatus.PUBLISHED.name) and
-                ((PostVariants.title.lowerCase() like likePattern) or
-                 (PostVariants.description.lowerCase() like likePattern) or
-                 (PostVariants.contentHtml.lowerCase() like likePattern))
+        var query = if (cleanTag != null) {
+            (Posts innerJoin PostVariants innerJoin PostTags innerJoin Tags).selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (Tags.blogId eq blogId) and
+                    (Tags.slug eq cleanTag) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+        } else {
+            (Posts innerJoin PostVariants).selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+        }
+
+        if (q.isNotBlank()) {
+            query = query.andWhere {
+                (PostVariants.title.lowerCase() like likePattern) or
+                (PostVariants.description.lowerCase() like likePattern) or
+                (PostVariants.contentHtml.lowerCase() like likePattern)
             }
+        }
 
         if (languageCode != null) {
             query = query.andWhere { PostVariants.languageCode eq languageCode }

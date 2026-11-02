@@ -174,6 +174,13 @@ export const api = {
       request<void>(`/api/console/blogs/${blogId}/posts/${postId}`, {
         method: 'DELETE',
       }),
+    runScheduler: (blogId: number) =>
+      request<{ publishedCount: number; message: string }>(
+        `/api/console/blogs/${blogId}/posts/scheduler/run`,
+        {
+          method: 'POST',
+        }
+      ),
   },
 
   tags: {

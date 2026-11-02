@@ -4,14 +4,32 @@
 
 {% block content %}
 <header style="margin-bottom: 2.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
-    <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Search Results</h1>
+    <h1 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.02em;">Search Articles</h1>
     <p style="color: var(--text-muted); font-size: 1rem; margin-top: 0.25rem;">
-        {% if query is empty %}
+        {% if query is empty and tag is empty %}
             Showing all published stories
         {% else %}
-            Found {{ total }} result(s) for "<strong>{{ query }}</strong>"
+            Found {{ total }} result(s) {% if query is not empty %}for "<strong>{{ query }}</strong>"{% endif %} {% if tag is not empty %}in tag <strong>#{{ tag }}</strong>{% endif %}
         {% endif %}
     </p>
+
+    <!-- Search input & filter form -->
+    <form action="/search" method="GET" style="display: flex; gap: 0.5rem; margin-top: 1.25rem; max-width: 600px;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search by title, topic, or content..." class="newsletter-input" style="flex: 1;" autocomplete="off">
+        {% if tag is not empty %}
+            <input type="hidden" name="tag" value="{{ tag }}">
+        {% endif %}
+        <button type="submit" class="newsletter-btn" style="padding: 0.6rem 1.25rem;">Search</button>
+    </form>
+
+    {% if tags is not empty %}
+    <nav class="tag-archive-siblings" aria-label="Filter by Topic" style="margin-top: 1.25rem;">
+        <a href="/search?q={{ query }}" class="home-tag-pill {% if tag is empty %}active{% endif %}">All Topics</a>
+        {% for t in tags %}
+            <a href="/search?q={{ query }}&tag={{ t.slug }}" class="home-tag-pill {% if t.slug == tag %}active{% endif %}">#{{ t.name }} <span class="home-tag-count">{{ t.postCount }}</span></a>
+        {% endfor %}
+    </nav>
+    {% endif %}
 </header>
 
 <section class="post-list">
@@ -30,6 +48,17 @@
                 {% endif %}
                 <div class="post-card-body">
                     <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+                    <div class="post-meta">
+                        <time datetime="{{ post.publishedAt }}">{{ post.publishedAt }}</time>
+                        {% if post.tags is not empty %}
+                            <span class="post-tags">
+                                &bull;
+                                {% for tg in post.tags %}
+                                    <span class="tag-pill">#{{ tg }}</span>{% if not loop.last %} {% endif %}
+                                {% endfor %}
+                            </span>
+                        {% endif %}
+                    </div>
                     {% if post.description %}
                         <p class="post-excerpt">{{ post.description }}</p>
                     {% endif %}

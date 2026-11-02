@@ -1,6 +1,15 @@
 {% extends "themes/default/layout.pebble" %}
 
 {% block content %}
+{% if tags is not empty %}
+<nav class="home-tag-bar" aria-label="Topic navigation">
+    <a href="/" class="home-tag-pill active">All Stories</a>
+    {% for t in tags %}
+        <a href="/tag/{{ t.slug }}" class="home-tag-pill">#{{ t.name }} <span class="home-tag-count">{{ t.postCount }}</span></a>
+    {% endfor %}
+</nav>
+{% endif %}
+
 <section class="post-list">
     {% if posts is empty %}
         <div class="empty-state">

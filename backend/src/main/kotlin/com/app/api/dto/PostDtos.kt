@@ -80,3 +80,9 @@ data class PostListItemDto(
     val variant: PostVariantDto?,
     val tags: List<TagDto> = emptyList()
 )
+
+@Serializable
+data class SchedulerRunResponse(
+    val publishedCount: Int,
+    val message: String
+)

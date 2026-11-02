@@ -15,7 +15,8 @@ data class RenderedView(
 
 class DeliveryService(
     private val pebbleRenderer: PebbleRenderer,
-    private val commentService: CommentService? = null
+    private val commentService: CommentService? = null,
+    private val tagService: TagService? = null
 ) {
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
         .withZone(ZoneId.of("UTC"))
@@ -61,9 +62,12 @@ class DeliveryService(
                 }
         }
 
+        val allTags = tagService?.listPublicTags(blog.id) ?: emptyList()
+
         val context = mapOf(
             "blog" to blogToContext(blog),
             "posts" to posts,
+            "tags" to allTags,
             "language" to languageCode,
             "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
@@ -170,6 +174,8 @@ class DeliveryService(
                 }
         }
 
+        val allTags = tagService?.listPublicTags(blog.id) ?: emptyList()
+
         val context = mapOf(
             "blog" to blogToContext(blog),
             "tag" to mapOf(
@@ -177,6 +183,7 @@ class DeliveryService(
                 "slug" to tag[Tags.slug]
             ),
             "posts" to posts,
+            "tags" to allTags,
             "language" to languageCode,
             "baseUrl" to baseUrl,
             "currentYear" to Calendar.getInstance().get(Calendar.YEAR)
@@ -190,12 +197,16 @@ class DeliveryService(
         blog: Blog,
         query: String,
         results: List<com.app.api.dto.SearchResultItemDto>,
+        tagSlug: String? = null,
         languageCode: String = blog.defaultLanguage,
         baseUrl: String? = null
     ): RenderedView {
+        val allTags = tagService?.listPublicTags(blog.id) ?: emptyList()
         val context = mapOf(
             "blog" to blogToContext(blog),
             "query" to query,
+            "tag" to tagSlug,
+            "tags" to allTags,
             "results" to results,
             "total" to results.size,
             "language" to languageCode,

@@ -51,12 +51,12 @@ fun Application.module() {
     val memberService = MemberService(blogService)
     val domainService = DomainService(blogService, config)
     val pebbleRenderer = PebbleRenderer()
-    val deliveryService = DeliveryService(pebbleRenderer, commentService)
+    val deliveryService = DeliveryService(pebbleRenderer, commentService, tagService)
     val aiService = AiService(config)
     val importService = ImportService(postService, tagService)
     val newsletterService = NewsletterService(postService)
     val analyticsService = AnalyticsService()
-    val schedulerService = SchedulerService(webhookService)
+    val schedulerService = SchedulerService(webhookService, revisionService)
     schedulerService.start()
 
     monitor.subscribe(ApplicationStopped) {
@@ -153,12 +153,14 @@ fun Application.module() {
             domainService,
             commentService,
             exportService,
-            revisionService
+            revisionService,
+            schedulerService
         )
         deliveryRoutes(
             blogService,
             deliveryService,
             postService,
+            tagService,
             newsletterService,
             analyticsService,
             commentService,

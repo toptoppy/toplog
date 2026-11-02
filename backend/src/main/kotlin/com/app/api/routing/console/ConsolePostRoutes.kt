@@ -7,6 +7,7 @@ import com.app.service.AiService
 import com.app.service.NewsletterService
 import com.app.service.PostService
 import com.app.service.RevisionService
+import com.app.service.SchedulerService
 import io.ktor.http.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -17,9 +18,16 @@ fun Route.consolePostRoutes(
     postService: PostService,
     revisionService: RevisionService,
     aiService: AiService,
-    newsletterService: NewsletterService
+    newsletterService: NewsletterService,
+    schedulerService: SchedulerService
 ) {
     route("/posts") {
+        post("/scheduler/run") {
+            val blogId = call.parameters["blogId"]!!.toLong()
+            val count = schedulerService.publishDuePosts(blogId)
+            call.respond(HttpStatusCode.OK, SchedulerRunResponse(publishedCount = count, message = "Checked and published $count due posts"))
+        }
+
         get {
             val blogId = call.parameters["blogId"]!!.toLong()
             val lang = call.request.queryParameters["language"]

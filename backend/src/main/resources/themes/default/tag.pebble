@@ -3,24 +3,47 @@
 {% block title %}Posts tagged with "{{ tag.name }}" - {{ blog.title }}{% endblock %}
 
 {% block content %}
-<header class="tag-header">
-    <h2>Tagged: #{{ tag.name }}</h2>
+<header class="tag-archive-hero">
+    <div class="tag-archive-badge">Topic Archive</div>
+    <h1 class="tag-archive-title">#{{ tag.name }}</h1>
+    <p class="tag-archive-meta">
+        Showing {{ posts.size() }} {% if posts.size() == 1 %}article{% else %}articles{% endif %} published under this topic.
+    </p>
+
+    {% if tags is not empty %}
+    <nav class="tag-archive-siblings" aria-label="Related Topics">
+        <a href="/" class="home-tag-pill">All Stories</a>
+        {% for t in tags %}
+            <a href="/tag/{{ t.slug }}" class="home-tag-pill {% if t.slug == tag.slug %}active{% endif %}">#{{ t.name }} <span class="home-tag-count">{{ t.postCount }}</span></a>
+        {% endfor %}
+    </nav>
+    {% endif %}
 </header>
 
 <section class="post-list">
     {% if posts is empty %}
-        <p>No posts with this tag yet.</p>
+        <div class="empty-state">
+            <p>No posts published in this topic yet.</p>
+            <a href="/" class="read-more">&larr; Back to all stories</a>
+        </div>
     {% else %}
         {% for post in posts %}
             <article class="post-card">
-                <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
-                <div class="post-meta">
-                    <time datetime="{{ post.publishedAt }}">{{ post.publishedAtFormatted }}</time>
-                </div>
-                {% if post.description %}
-                    <p class="post-excerpt">{{ post.description }}</p>
+                {% if post.featuredImageUrl %}
+                    <a href="/{{ post.slug }}" class="post-thumbnail">
+                        <img src="{{ post.featuredImageUrl }}" alt="{{ post.title }}" loading="lazy">
+                    </a>
                 {% endif %}
-                <a href="/{{ post.slug }}" class="read-more">Read full story &rarr;</a>
+                <div class="post-card-body">
+                    <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
+                    <div class="post-meta">
+                        <time datetime="{{ post.publishedAt }}">{{ post.publishedAtFormatted }}</time>
+                    </div>
+                    {% if post.description %}
+                        <p class="post-excerpt">{{ post.description }}</p>
+                    {% endif %}
+                    <a href="/{{ post.slug }}" class="read-more">Read full story &rarr;</a>
+                </div>
             </article>
         {% endfor %}
     {% endif %}

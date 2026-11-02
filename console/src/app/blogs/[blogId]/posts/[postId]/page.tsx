@@ -172,12 +172,18 @@ export default function PostStudioPage() {
     }
   }
 
-  const handleSaveVariant = async (overrideStatus?: PostStatus) => {
+  const handleSaveVariant = async (overrideStatus?: PostStatus, overrideScheduledAt?: string) => {
     setError('')
     setMessage('')
     setSaving(true)
 
     const nextStatus = overrideStatus || status
+    const nextScheduledAt =
+      nextStatus === 'DRAFT'
+        ? undefined
+        : overrideScheduledAt !== undefined
+        ? overrideScheduledAt
+        : scheduledAt
 
     try {
       // 1. Update Post Metadata
@@ -195,11 +201,23 @@ export default function PostStudioPage() {
         contentHtml,
         contentJson,
         status: nextStatus,
-        scheduledAt: nextStatus === 'SCHEDULED' ? scheduledAt : undefined,
+        scheduledAt: nextStatus === 'SCHEDULED' ? (nextScheduledAt || undefined) : undefined,
       })
 
       setStatus(nextStatus)
-      setMessage('Post saved successfully!')
+      if (nextStatus === 'SCHEDULED' && nextScheduledAt) {
+        setScheduledAt(nextScheduledAt)
+      } else if (nextStatus !== 'SCHEDULED') {
+        setScheduledAt(null)
+      }
+
+      setMessage(
+        nextStatus === 'SCHEDULED'
+          ? `Post scheduled for publication on ${new Date(nextScheduledAt!).toLocaleString()}!`
+          : nextStatus === 'PUBLISHED'
+          ? 'Post published successfully!'
+          : 'Draft saved successfully!'
+      )
 
       // Refresh post
       const refreshedPost = await api.posts.get(blogId, postId)
@@ -458,6 +476,19 @@ export default function PostStudioPage() {
             <span>Save Draft</span>
           </button>
 
+          {status === 'SCHEDULED' && (
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => handleSaveVariant('DRAFT')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-100 disabled:opacity-50 transition"
+              title="Cancel schedule and revert back to draft"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+              <span>Revert to Draft</span>
+            </button>
+          )}
+
           <button
             type="button"
             disabled={saving}
@@ -654,9 +685,10 @@ export default function PostStudioPage() {
         scheduleDateTime={scheduleDateTime}
         setScheduleDateTime={setScheduleDateTime}
         onConfirm={() => {
-          setScheduledAt(new Date(scheduleDateTime).toISOString())
+          const newIso = new Date(scheduleDateTime).toISOString()
+          setScheduledAt(newIso)
           setShowScheduleModal(false)
-          handleSaveVariant('SCHEDULED')
+          handleSaveVariant('SCHEDULED', newIso)
         }}
       />
 
