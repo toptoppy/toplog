@@ -2,14 +2,46 @@ package com.app.api.routing
 
 import com.app.api.dto.*
 import com.app.api.routing.console.*
+import com.app.domain.model.BlogRole
 import com.app.infrastructure.security.UserPrincipal
 import com.app.infrastructure.storage.StorageService
 import com.app.service.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import io.ktor.util.AttributeKey
+
+val BlogRoleKey = AttributeKey<BlogRole>("BlogRole")
+
+fun Route.withBlogAccessGuard(blogService: BlogService, build: Route.() -> Unit): Route {
+    val plugin = createRouteScopedPlugin("BlogAccessGuardPlugin") {
+        on(AuthenticationChecked) { call ->
+            val principal = call.principal<UserPrincipal>() ?: run {
+                call.respond(HttpStatusCode.Unauthorized, mapOf("error" to "Authentication required"))
+                return@on
+            }
+            val blogId = call.parameters["blogId"]?.toLongOrNull() ?: run {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Invalid blogId parameter"))
+                return@on
+            }
+            val role = blogService.getUserRoleInBlog(blogId, principal.userId)
+            if (role == null) {
+                call.respond(
+                    HttpStatusCode.Forbidden,
+                    mapOf("error" to "Access denied: you do not have permission to access this blog")
+                )
+                return@on
+            }
+            call.attributes.put(BlogRoleKey, role)
+        }
+    }
+    install(plugin)
+    build()
+    return this
+}
 
 fun Route.consoleRoutes(
     blogService: BlogService,
@@ -31,6 +63,7 @@ fun Route.consoleRoutes(
     get("/uploads/{filename}") {
         val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest)
         val file = storageService.getFile(filename) ?: return@get call.respond(HttpStatusCode.NotFound)
+        call.response.header("X-Content-Type-Options", "nosniff")
         call.respondFile(file)
     }
 
@@ -62,40 +95,47 @@ fun Route.consoleRoutes(
                 }
 
                 route("/{blogId}") {
-                    get {
-                        val blogId = call.parameters["blogId"]?.toLongOrNull()
-                            ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid blogId")
-                        val blog = blogService.getBlogById(blogId)
-                            ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
+                    withBlogAccessGuard(blogService) {
+                        get {
+                            val blogId = call.parameters["blogId"]!!.toLong()
+                            val blog = blogService.getBlogById(blogId)
+                                ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
 
-                        with(blogService) {
-                            call.respond(HttpStatusCode.OK, blog.toDto())
+                            with(blogService) {
+                                call.respond(HttpStatusCode.OK, blog.toDto())
+                            }
                         }
-                    }
 
-                    put {
-                        val principal = call.principal<UserPrincipal>()!!
-                        val blogId = call.parameters["blogId"]?.toLongOrNull()
-                            ?: return@put call.respond(HttpStatusCode.BadRequest, "Invalid blogId")
-                        val request = call.receive<UpdateBlogRequest>()
-                        val updated = blogService.updateBlog(blogId, principal.userId, request)
-                        call.respond(HttpStatusCode.OK, updated)
-                    }
+                        put {
+                            val role = call.attributes[BlogRoleKey]
+                            if (role != BlogRole.ADMIN) {
+                                return@put call.respond(
+                                    HttpStatusCode.Forbidden,
+                                    mapOf("error" to "Only blog administrators can update blog settings")
+                                )
+                            }
+                            val principal = call.principal<UserPrincipal>()!!
+                            val blogId = call.parameters["blogId"]!!.toLong()
+                            val request = call.receive<UpdateBlogRequest>()
+                            val updated = blogService.updateBlog(blogId, principal.userId, request)
+                            call.respond(HttpStatusCode.OK, updated)
+                        }
 
-                    // Modular Sub-Routes
-                    consolePostRoutes(postService, revisionService, aiService, newsletterService)
-                    consoleAiRoutes(aiService)
-                    consoleSubscriberAndTagRoutes(newsletterService, tagService)
-                    consoleWebhookRoutes(webhookService)
-                    consoleMediaAndImportRoutes(storageService, importService, blogService)
-                    consoleCollaborationRoutes(
-                        analyticsService,
-                        memberService,
-                        domainService,
-                        commentService,
-                        exportService,
-                        blogService
-                    )
+                        // Modular Sub-Routes
+                        consolePostRoutes(postService, revisionService, aiService, newsletterService)
+                        consoleAiRoutes(aiService)
+                        consoleSubscriberAndTagRoutes(newsletterService, tagService)
+                        consoleWebhookRoutes(webhookService)
+                        consoleMediaAndImportRoutes(storageService, importService, blogService)
+                        consoleCollaborationRoutes(
+                            analyticsService,
+                            memberService,
+                            domainService,
+                            commentService,
+                            exportService,
+                            blogService
+                        )
+                    }
                 }
             }
         }

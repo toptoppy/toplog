@@ -6,8 +6,23 @@
     }
 }
 
+# Reusable security headers snippet
+(security_headers) {
+    header {
+        # Prevent MIME type sniffing
+        X-Content-Type-Options "nosniff"
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+        # Referrer policy for external links
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # XSS filter protection
+        X-XSS-Protection "1; mode=block"
+    }
+}
+
 # 1. Admin Console
 {$CONSOLE_DOMAIN:console.localhost} {
+    import security_headers
     encode zstd gzip
 
     @static path /_next/static/*
@@ -28,6 +43,7 @@
 
 # 2. Main API & Dynamic Blog Subdomains (*.yourdomain.com)
 *.{$BASE_DOMAIN:localhost}, {$BASE_DOMAIN:localhost} {
+    import security_headers
     encode zstd gzip
 
     @assets path /assets/*
@@ -38,6 +54,7 @@
 
 # 3. Dynamic Custom Domains (e.g. blog.client.com)
 :443 {
+    import security_headers
     tls {
         on_demand
     }

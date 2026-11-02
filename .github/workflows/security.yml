@@ -1,0 +1,58 @@
+name: Security Audit & Integrity Check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  backend-security:
+    name: Backend Security & Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x backend/gradlew
+
+      - name: Run Backend Tests & Compilation
+        working-directory: backend
+        run: ./gradlew compileKotlin test --no-daemon
+
+  frontend-security:
+    name: Frontend Dependency Audit & Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: console/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: console
+        run: npm ci
+
+      - name: Run Dependency Security Audit
+        working-directory: console
+        run: npm audit --audit-level=high
+
+      - name: Verify Production Build
+        working-directory: console
+        run: npm run build
