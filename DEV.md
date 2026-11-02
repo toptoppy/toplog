@@ -52,8 +52,8 @@ export STORAGE_UPLOADS_DIR="./uploads"
 # Compile Kotlin sources
 ./gradlew compileKotlin
 
-# Run unit and integration tests
-./gradlew test
+# Run unit and integration tests with JaCoCo coverage
+./gradlew test jacocoTestReport
 
 # Assemble standalone distribution zip/tar
 ./gradlew assemble
@@ -81,6 +81,9 @@ npm run dev
 ### Useful Frontend Scripts
 
 ```bash
+# Run unit & component tests (Vitest)
+npm test
+
 # Production build check & type checking
 npm run build
 

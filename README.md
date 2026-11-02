@@ -4,6 +4,8 @@
   <strong>High-Performance Publishing Engine &amp; Modern Content Studio</strong>
   <br />
   Kotlin 21 + Ktor 3.1 Delivery Backend &bull; Next.js 15 Admin Console &bull; PostgreSQL 18 &bull; Caddy 2 On-Demand SSL
+  <br />
+  <span style="font-size: 12px; font-weight: bold; background: #2563eb; color: #fff; padding: 2px 8px; border-radius: 9999px;">Release v1.2.0</span>
 </p>
 
 <p align="center">
@@ -21,17 +23,21 @@
 ## Highlights & Capabilities
 
 - **High-Performance Multi-Tenant Architecture**: Host unlimited blogs across subdomains (`*.localhost` or `*.yourdomain.com`) and custom domains from a single deployment.
+- **Custom Domain Auto-DNS & On-Demand SSL (`v1.2.0`)**: Real-time DNS verification, automated background DNS propagation daemon, Caddy on-demand TLS hook security, and full CNAME setup instructions.
+- **Automated Test Coverage & JaCoCo Reporting (`v1.2.0`)**: Comprehensive test suite across Ktor in-memory API integration tests, background publishing scheduler tests, file security path-traversal tests, and Vitest + React Testing Library component tests with automated HTML/XML JaCoCo reporting.
+- **SEO & Social Share Preview Studio (`v1.1.1`)**: Real-time Google SERP preview (desktop & mobile simulation), Twitter/X, Facebook, and LinkedIn social cards, live SEO health score audit (0–100), and canonical URL syndicated overrides.
+- **Instant Search with Topic & Tag Archives (`v1.1.0`)**: Client-side instant search modal (`Cmd+K` / `Ctrl+K`), topic tag navigation pills, and full-text search backend.
+- **Automated Scheduled Post Publishing (`v1.1.0`)**: Background coroutine scheduler with tenant isolation, auto-publishing scheduled articles, and dispatching webhooks.
 - **Modern Next.js 15 Console**: Fast, responsive administrative console built with Next.js 15 App Router, React 19, TypeScript, and Tailwind CSS.
 - **TipTap Rich Text Studio with Media Drag & Drop**: Visual block editor supporting Markdown shortcuts, drag-and-drop and clipboard paste image uploads directly to local storage, and code formatting.
 - **Native OpenRouter & LLM Engine**: 1-click multilingual translation and automated SEO optimization powered by OpenRouter, OpenAI, Groq, or DeepSeek with key configuration directly in the UI.
 - **Code Syntax Highlighting with 1-Click Copy**: Built-in Highlight.js styling with One Dark palette and copy-to-clipboard buttons on all `<pre><code>` blocks in public reader posts.
 - **First-Class Internationalization**: Multi-language variants per post (`en`, `es`, `fr`, etc.) with independent slugs, metadata, and body content.
 - **Post Revision History & Rollback**: Automatic version snapshots recorded on every save, with a diff/preview modal and 1-click rollback in Post Studio.
-- **Dynamic Open Graph & Social Cards**: Auto-generated 1200×630 vector SVG social preview cards (`/api/og/:slug`) with ambient glowing gradients, reading time, and brand watermarks.
+- **Dynamic Open Graph & Social Cards**: Auto-generated 1200×630 vector SVG social preview cards (`/api/og/:slug` and `/og-preview`) with ambient glowing gradients, reading time, and brand watermarks.
 - **Reading Experience**: Dynamic reading time estimation (`X min read`), sticky scroll-synced reading progress bar, and automated Table of Contents (TOC).
 - **Dark Mode & Multi-Theme Switcher**: Visitor light/dark mode toggle respecting system preferences, persisted in local storage, and controllable per-blog in settings.
 - **Full Blog Backup & Data Export**: 1-click `.zip` archive download bundling YAML frontmatter Markdown files, tags JSON, comments JSON, and subscribers CSV.
-- **Automated Post Scheduler**: Background coroutine worker publishing scheduled articles and dispatching webhooks automatically.
 - **Webhooks & Integrations**: Outgoing HTTP POST webhooks with HMAC-SHA256 signature verification and detailed delivery audit logs.
 - **Reader Comments & Moderation**: Built-in discussion engine with multi-level reply threads, spam flagging, and status moderation (`PENDING`, `APPROVED`, `SPAM`).
 - **Subscribers & Newsletter Campaigns**: Reader email subscription forms, unsubscribe tokens, and newsletter dispatches directly from published posts.
@@ -117,6 +123,21 @@ blogs/
 ├── docs/                     # Comprehensive architectural & setup guides
 ├── .env.example              # Template environment configuration
 └── DEV.md                    # Host-native development guidelines
+```
+
+---
+
+## Automated Testing & Code Coverage
+
+Toplog includes full-stack automated test coverage across backend subsystems and console UI components.
+
+```bash
+# Run backend integration tests and generate JaCoCo coverage reports
+cd backend && ./gradlew test jacocoTestReport
+# Coverage report generated at: backend/build/reports/jacoco/test/html/index.html
+
+# Run frontend Vitest component & unit tests
+cd console && npm test
 ```
 
 ---
