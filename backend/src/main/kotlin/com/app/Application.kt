@@ -154,7 +154,8 @@ fun Application.module() {
             commentService,
             exportService,
             revisionService,
-            schedulerService
+            schedulerService,
+            ogImageService
         )
         deliveryRoutes(
             blogService,

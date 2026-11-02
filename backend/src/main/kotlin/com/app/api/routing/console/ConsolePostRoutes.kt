@@ -4,7 +4,9 @@ import com.app.api.dto.*
 import com.app.domain.model.PostStatus
 import com.app.infrastructure.security.UserPrincipal
 import com.app.service.AiService
+import com.app.service.BlogService
 import com.app.service.NewsletterService
+import com.app.service.OgImageService
 import com.app.service.PostService
 import com.app.service.RevisionService
 import com.app.service.SchedulerService
@@ -19,7 +21,9 @@ fun Route.consolePostRoutes(
     revisionService: RevisionService,
     aiService: AiService,
     newsletterService: NewsletterService,
-    schedulerService: SchedulerService
+    schedulerService: SchedulerService,
+    ogImageService: OgImageService,
+    blogService: BlogService
 ) {
     route("/posts") {
         post("/scheduler/run") {
@@ -82,6 +86,25 @@ fun Route.consolePostRoutes(
                 val request = call.receive<UpdateVariantRequest>()
                 val variant = postService.saveVariant(postId, blogId, lang, request, principal.userId)
                 call.respond(HttpStatusCode.OK, variant)
+            }
+
+            // --- REAL-TIME SOCIAL OG IMAGE CARD PREVIEW ---
+            get("/og-preview") {
+                val blogId = call.parameters["blogId"]!!.toLong()
+                val postId = call.parameters["postId"]!!.toLong()
+                val blog = blogService.getBlogById(blogId)
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
+                val post = postService.getPostById(postId, blogId)
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Post not found")
+                val lang = call.request.queryParameters["language"] ?: "en"
+                val variant = post.variants.find { it.languageCode == lang } ?: post.variants.firstOrNull()
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "No variant found for language")
+
+                val svg = ogImageService.renderOgSvg(blog, variant.slug, allowDrafts = true)
+                    ?: return@get call.respond(HttpStatusCode.NotFound, "Failed to render card preview")
+
+                call.response.header(HttpHeaders.CacheControl, "no-cache, no-store")
+                call.respondText(svg, ContentType("image", "svg+xml"))
             }
 
             // --- REVISIONS ---

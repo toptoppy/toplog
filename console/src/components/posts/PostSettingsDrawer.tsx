@@ -7,6 +7,8 @@ import {
   ImageIcon,
   Sparkles,
   Star,
+  Globe,
+  Link as LinkIcon,
 } from 'lucide-react'
 
 interface PostSettingsDrawerProps {
@@ -33,6 +35,9 @@ interface PostSettingsDrawerProps {
   isPage: boolean
   setIsPage: (page: boolean) => void
   handleDeletePost: () => void
+  onOpenSeoPreview?: () => void
+  canonicalUrl?: string
+  setCanonicalUrl?: (url: string) => void
 }
 
 export default function PostSettingsDrawer({
@@ -55,6 +60,9 @@ export default function PostSettingsDrawer({
   isPage,
   setIsPage,
   handleDeletePost,
+  onOpenSeoPreview,
+  canonicalUrl = '',
+  setCanonicalUrl,
 }: PostSettingsDrawerProps) {
   if (!isOpen) return null
 
@@ -71,6 +79,28 @@ export default function PostSettingsDrawer({
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* SEO & Social Card Preview Trigger */}
+      {onOpenSeoPreview && (
+        <button
+          type="button"
+          onClick={onOpenSeoPreview}
+          className="w-full flex items-center justify-between p-3 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 text-purple-900 transition group text-left shadow-sm"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white">
+              <Globe className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="text-xs font-bold leading-tight">SEO & Social Preview</div>
+              <div className="text-[10px] text-purple-700/80">Google, Twitter & Facebook cards</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold text-purple-700 bg-white/80 border border-purple-200 px-2 py-0.5 rounded-md group-hover:bg-purple-600 group-hover:text-white transition">
+            Preview
+          </span>
+        </button>
+      )}
 
       {/* Featured Image */}
       <div>
@@ -125,15 +155,20 @@ export default function PostSettingsDrawer({
           <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500">
             Meta Description ({activeLang.toUpperCase()})
           </label>
-          <button
-            type="button"
-            onClick={handleGenerateSeo}
-            disabled={generatingSeo}
-            className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 disabled:opacity-50"
-          >
-            <Sparkles className="h-3 w-3 text-purple-600" />
-            {generatingSeo ? 'Generating...' : 'AI Generate'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleGenerateSeo}
+              disabled={generatingSeo}
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 disabled:opacity-50"
+            >
+              <Sparkles className="h-3 w-3 text-purple-600" />
+              {generatingSeo ? 'Generating...' : 'AI Generate'}
+            </button>
+            <span className={`text-[10px] font-mono ${description.length > 160 ? 'text-red-600 font-bold' : 'text-zinc-400'}`}>
+              {description.length} / 160
+            </span>
+          </div>
         </div>
         <textarea
           rows={3}
@@ -143,6 +178,26 @@ export default function PostSettingsDrawer({
           className="w-full rounded-lg border border-zinc-200 p-2 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
         />
       </div>
+
+      {/* Canonical URL Override */}
+      {setCanonicalUrl && (
+        <div>
+          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500 mb-1.5 flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <LinkIcon className="h-3 w-3" />
+              <span>Canonical URL</span>
+            </span>
+            <span className="text-[10px] font-mono text-zinc-400">Optional</span>
+          </label>
+          <input
+            type="url"
+            value={canonicalUrl || ''}
+            onChange={(e) => setCanonicalUrl(e.target.value)}
+            placeholder="https://original-source.com/post"
+            className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          />
+        </div>
+      )}
 
       {/* AI SEO Suggestions */}
       {seoSuggestions && (

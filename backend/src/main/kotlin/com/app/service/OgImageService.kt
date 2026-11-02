@@ -6,6 +6,7 @@ import com.app.domain.model.PostVariants
 import com.app.domain.model.Posts
 import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.andWhere
 import org.jetbrains.exposed.sql.selectAll
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -16,24 +17,27 @@ class OgImageService {
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
         .withZone(ZoneId.of("UTC"))
 
-    suspend fun renderOgSvg(blog: Blog, slug: String): String? {
+    suspend fun renderOgSvg(blog: Blog, slug: String, allowDrafts: Boolean = false): String? {
         val cleanSlug = slug.trim().lowercase()
 
         val postInfo = dbQuery {
-            (Posts innerJoin PostVariants).selectAll()
+            var query = (Posts innerJoin PostVariants).selectAll()
                 .where {
                     (Posts.blogId eq blog.id) and
-                    (PostVariants.slug eq cleanSlug) and
-                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                    (PostVariants.slug eq cleanSlug)
                 }
-                .firstOrNull()
+            if (!allowDrafts) {
+                query = query.andWhere { PostVariants.status eq PostStatus.PUBLISHED.name }
+            }
+            query.firstOrNull()
                 ?.let { row ->
                     val title = row[PostVariants.title]
                     val pubAt = row[PostVariants.publishedAt]
                     val content = row[PostVariants.contentHtml]
                     val wordCount = content.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).size
                     val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
-                    Triple(title, pubAt?.let { dateFormatter.format(it) } ?: "", readingTime)
+                    val dateFormatted = pubAt?.let { dateFormatter.format(it) } ?: "Preview Draft"
+                    Triple(title, dateFormatted, readingTime)
                 }
         } ?: return null
 

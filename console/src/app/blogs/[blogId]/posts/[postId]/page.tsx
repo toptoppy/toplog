@@ -12,6 +12,7 @@ import AiTranslateModal from '@/components/posts/AiTranslateModal'
 import SendNewsletterModal from '@/components/posts/SendNewsletterModal'
 import SchedulePostModal from '@/components/posts/SchedulePostModal'
 import PostRevisionsModal from '@/components/posts/PostRevisionsModal'
+import SeoPreviewModal from '@/components/posts/SeoPreviewModal'
 import {
   ChevronLeft,
   Save,
@@ -56,7 +57,9 @@ export default function PostStudioPage() {
   const [isFeatured, setIsFeatured] = useState(false)
   const [isPage, setIsPage] = useState(false)
   const [featuredImageUrl, setFeaturedImageUrl] = useState('')
+  const [canonicalUrl, setCanonicalUrl] = useState('')
   const [showSettingsSidebar, setShowSettingsSidebar] = useState(false)
+  const [showSeoPreviewModal, setShowSeoPreviewModal] = useState(false)
 
   // Add Variant Modal State
   const [showAddLangModal, setShowAddLangModal] = useState(false)
@@ -106,6 +109,7 @@ export default function PostStudioPage() {
       setIsFeatured(p.isFeatured)
       setIsPage(p.isPage)
       setFeaturedImageUrl(p.featuredImageUrl || '')
+      setCanonicalUrl(p.canonicalUrl || '')
 
       // Select default or first variant
       const defaultVariant =
@@ -191,6 +195,7 @@ export default function PostStudioPage() {
         isFeatured,
         isPage,
         featuredImageUrl: featuredImageUrl || undefined,
+        canonicalUrl: canonicalUrl ? canonicalUrl.trim() : null,
       })
 
       // 2. Upsert Variant
@@ -455,6 +460,16 @@ export default function PostStudioPage() {
 
           <button
             type="button"
+            onClick={() => setShowSeoPreviewModal(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-sm"
+            title="Preview Google search snippet and social share cards"
+          >
+            <Globe className="h-3.5 w-3.5 text-purple-600" />
+            <span>SEO & Social</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setShowSettingsSidebar(!showSettingsSidebar)}
             className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
               showSettingsSidebar
@@ -645,10 +660,35 @@ export default function PostStudioPage() {
           isPage={isPage}
           setIsPage={setIsPage}
           handleDeletePost={handleDeletePost}
+          onOpenSeoPreview={() => setShowSeoPreviewModal(true)}
+          canonicalUrl={canonicalUrl}
+          setCanonicalUrl={setCanonicalUrl}
         />
       </div>
 
       {/* Modals */}
+      <SeoPreviewModal
+        isOpen={showSeoPreviewModal}
+        onClose={() => setShowSeoPreviewModal(false)}
+        blogId={blogId}
+        postId={postId}
+        blogTitle={blog?.title || ''}
+        subdomain={blog?.subdomain || ''}
+        customDomain={blog?.customDomain}
+        activeLang={activeLang}
+        title={title}
+        setTitle={setTitle}
+        slug={slug}
+        setSlug={setSlug}
+        description={description}
+        setDescription={setDescription}
+        featuredImageUrl={featuredImageUrl}
+        setFeaturedImageUrl={setFeaturedImageUrl}
+        canonicalUrl={canonicalUrl}
+        setCanonicalUrl={setCanonicalUrl}
+        handleGenerateSeo={handleGenerateSeo}
+        generatingSeo={generatingSeo}
+      />
       <AddLanguageModal
         isOpen={showAddLangModal}
         onClose={() => setShowAddLangModal(false)}

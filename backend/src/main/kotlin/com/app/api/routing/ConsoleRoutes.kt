@@ -58,7 +58,8 @@ fun Route.consoleRoutes(
     commentService: CommentService,
     exportService: ExportService,
     revisionService: RevisionService,
-    schedulerService: SchedulerService
+    schedulerService: SchedulerService,
+    ogImageService: OgImageService
 ) {
     // 1. Static media uploads endpoint (public)
     get("/uploads/{filename}") {
@@ -123,7 +124,7 @@ fun Route.consoleRoutes(
                         }
 
                         // Modular Sub-Routes
-                        consolePostRoutes(postService, revisionService, aiService, newsletterService, schedulerService)
+                        consolePostRoutes(postService, revisionService, aiService, newsletterService, schedulerService, ogImageService, blogService)
                         consoleAiRoutes(aiService)
                         consoleSubscriberAndTagRoutes(newsletterService, tagService)
                         consoleWebhookRoutes(webhookService)
