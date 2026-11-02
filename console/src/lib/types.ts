@@ -200,6 +200,14 @@ export interface ImportResult {
   message: string
 }
 
+export interface MediaItem {
+  filename: string
+  url: string
+  sizeBytes: number
+  contentType: string
+  createdAt: string
+}
+
 export type SubscriberStatus = 'ACTIVE' | 'UNSUBSCRIBED'
 
 export interface Subscriber {

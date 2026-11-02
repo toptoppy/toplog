@@ -1,10 +1,13 @@
 package com.app.infrastructure.storage
 
+import com.app.api.dto.MediaItemDto
 import com.app.config.AppConfig
 import java.io.File
 import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class StorageService(private val config: AppConfig) {
@@ -49,5 +52,59 @@ class StorageService(private val config: AppConfig) {
         }
 
         return if (targetFile.exists() && targetFile.isFile) targetFile else null
+    }
+
+    fun listMediaForBlog(blogId: Long): List<MediaItemDto> {
+        val prefix = "${blogId}_"
+        val files = rootDir.listFiles { file ->
+            file.isFile && file.name.startsWith(prefix)
+        } ?: emptyArray()
+
+        val formatter = DateTimeFormatter.ISO_INSTANT
+
+        return files
+            .sortedByDescending { it.lastModified() }
+            .map { file ->
+                val ext = file.extension.lowercase()
+                val contentType = resolveContentType(ext)
+                val instant = Instant.ofEpochMilli(file.lastModified())
+                MediaItemDto(
+                    filename = file.name,
+                    url = "/uploads/${file.name}",
+                    sizeBytes = file.length(),
+                    contentType = contentType,
+                    createdAt = formatter.format(instant)
+                )
+            }
+    }
+
+    fun deleteMediaFile(blogId: Long, filename: String): Boolean {
+        val prefix = "${blogId}_"
+        // Ensure the filename strictly belongs to this blogId and contains no path traversal
+        if (!filename.startsWith(prefix) || filename.contains('/') || filename.contains('\\') || filename.contains("..")) {
+            return false
+        }
+        val file = File(rootDir, filename).canonicalFile
+        val canonicalRoot = rootDir.canonicalFile
+        if (!file.toPath().startsWith(canonicalRoot.toPath()) || !file.exists() || !file.isFile) {
+            return false
+        }
+        return file.delete()
+    }
+
+    private fun resolveContentType(ext: String): String = when (ext) {
+        "jpg", "jpeg" -> "image/jpeg"
+        "png" -> "image/png"
+        "gif" -> "image/gif"
+        "webp" -> "image/webp"
+        "svg" -> "image/svg+xml"
+        "ico" -> "image/x-icon"
+        "avif" -> "image/avif"
+        "pdf" -> "application/pdf"
+        "zip" -> "application/zip"
+        "xml" -> "application/xml"
+        "json" -> "application/json"
+        "txt", "md" -> "text/plain"
+        else -> "application/octet-stream"
     }
 }

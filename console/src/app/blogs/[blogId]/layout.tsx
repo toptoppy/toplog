@@ -9,6 +9,7 @@ import { Blog } from '@/lib/types'
 import {
   FileText,
   Tag as TagIcon,
+  Image as ImageIcon,
   Settings,
   ChevronLeft,
   ExternalLink,
@@ -77,6 +78,7 @@ export default function BlogLayout({
       items: [
         { label: 'Overview', href: `/blogs/${blogId}`, icon: LayoutDashboard, exact: true },
         { label: 'Posts', href: `/blogs/${blogId}/posts`, icon: FileText, exact: false },
+        { label: 'Media', href: `/blogs/${blogId}/media`, icon: ImageIcon, exact: false },
         { label: 'Tags', href: `/blogs/${blogId}/tags`, icon: TagIcon, exact: false },
         { label: 'Comments', href: `/blogs/${blogId}/comments`, icon: MessageSquare, exact: false },
       ],

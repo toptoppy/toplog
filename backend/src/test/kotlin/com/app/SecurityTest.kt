@@ -53,5 +53,24 @@ class SecurityTest {
         // 4. File extension validation - executable/dangerous script extensions stripped
         val (dangerousName, _) = storage.saveFile(1L, "exploit.sh", ByteArrayInputStream("echo hack".toByteArray()))
         assertTrue(!dangerousName.endsWith(".sh"), "Dangerous executable extension should not be preserved")
+
+        // 5. Tenant isolation for media assets
+        val (blog2File, _) = storage.saveFile(2L, "secret.png", ByteArrayInputStream("blog2 data".toByteArray()))
+        val blog1Media = storage.listMediaForBlog(1L)
+        val blog2Media = storage.listMediaForBlog(2L)
+
+        assertTrue(blog1Media.any { it.filename == savedName })
+        assertTrue(blog1Media.none { it.filename == blog2File }, "Blog 1 must not see Blog 2 assets")
+        assertTrue(blog2Media.any { it.filename == blog2File })
+        assertTrue(blog2Media.none { it.filename == savedName }, "Blog 2 must not see Blog 1 assets")
+
+        // 6. Cross-tenant deletion prevention
+        val crossDeleteSuccess = storage.deleteMediaFile(blogId = 1L, filename = blog2File)
+        assertTrue(!crossDeleteSuccess, "Blog 1 must not be able to delete Blog 2 file")
+
+        // 7. Legitimate deletion
+        val selfDeleteSuccess = storage.deleteMediaFile(blogId = 1L, filename = savedName)
+        assertTrue(selfDeleteSuccess, "Blog 1 should be able to delete its own file")
+        assertNull(storage.getFile(savedName), "Deleted file must no longer be accessible")
     }
 }

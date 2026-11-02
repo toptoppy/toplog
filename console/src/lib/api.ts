@@ -16,6 +16,7 @@ import {
   WebhookDelivery,
   TestWebhookResult,
   ImportResult,
+  MediaItem,
   Subscriber,
   CreateSubscriberInput,
   Newsletter,
@@ -189,14 +190,23 @@ export const api = {
   },
 
   media: {
-    upload: async (blogId: number, file: File): Promise<{ url: string }> => {
+    list: (blogId: number) =>
+      request<MediaItem[]>(`/api/console/blogs/${blogId}/media`),
+    upload: async (blogId: number, file: File): Promise<{ url: string; filename?: string }> => {
       const formData = new FormData()
       formData.append('file', file)
-      return request<{ url: string }>(`/api/console/blogs/${blogId}/media`, {
+      return request<{ url: string; filename?: string }>(`/api/console/blogs/${blogId}/media`, {
         method: 'POST',
         body: formData,
       })
     },
+    delete: (blogId: number, filename: string) =>
+      request<{ success: boolean; message: string }>(
+        `/api/console/blogs/${blogId}/media/${encodeURIComponent(filename)}`,
+        {
+          method: 'DELETE',
+        }
+      ),
   },
 
   ai: {
