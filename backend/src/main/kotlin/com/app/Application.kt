@@ -32,9 +32,14 @@ fun main(args: Array<String>): Unit = EngineMain.main(args)
 
 fun Application.module() {
     val config = AppConfig.fromApplicationConfig(environment.config)
+    configureApp(config, initDb = true, startScheduler = true)
+}
 
+fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startScheduler: Boolean = true) {
     // 1. Database Init & Flyway Migrations
-    DatabaseFactory.init(config)
+    if (initDb) {
+        DatabaseFactory.init(config)
+    }
 
     // 2. Services
     val jwtService = JwtService(config)
@@ -57,10 +62,11 @@ fun Application.module() {
     val newsletterService = NewsletterService(postService)
     val analyticsService = AnalyticsService()
     val schedulerService = SchedulerService(webhookService, revisionService)
-    schedulerService.start()
-
-    monitor.subscribe(ApplicationStopped) {
-        schedulerService.stop()
+    if (startScheduler) {
+        schedulerService.start()
+        monitor.subscribe(ApplicationStopped) {
+            schedulerService.stop()
+        }
     }
 
     // 3. Plugins
@@ -109,7 +115,7 @@ fun Application.module() {
             call.respond(HttpStatusCode.Forbidden, mapOf("error" to (cause.message ?: "Access denied")))
         }
         exception<Throwable> { call, cause ->
-            this@module.log.error("Unhandled error: ${cause.message}", cause)
+            this@configureApp.log.error("Unhandled error: ${cause.message}", cause)
             call.respond(HttpStatusCode.InternalServerError, mapOf("error" to "Internal server error"))
         }
     }
