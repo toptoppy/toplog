@@ -145,6 +145,13 @@ fun Route.deliveryRoutes(
         }
     }
 
+    head("/{path...}") {
+        val host = call.request.host()
+        val blog = blogService.findByHost(host, config.baseDomain)
+            ?: return@head call.respond(HttpStatusCode.NotFound)
+        call.respond(HttpStatusCode.OK)
+    }
+
     get("/{path...}") {
         val path = "/" + (call.parameters.getAll("path")?.joinToString("/") ?: "")
         val host = call.request.host()

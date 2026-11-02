@@ -10,5 +10,7 @@ data class VerifyDomainResponse(
     val verified: Boolean,
     val detectedIps: List<String>,
     val expectedCnameOrIp: String,
+    val sslReady: Boolean = false,
+    val sslStatus: String = "PENDING_DNS",
     val message: String
 )

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
-import { Blog, AiStatus, AiTestResult } from '@/lib/types'
+import { Blog, AiStatus, AiTestResult, VerifyDomainResult } from '@/lib/types'
 import {
   Save,
   CheckCircle2,
@@ -59,11 +59,7 @@ export default function BlogSettingsPage() {
   const [saving, setSaving] = useState(false)
   const [exportingArchive, setExportingArchive] = useState(false)
   const [verifyingDomain, setVerifyingDomain] = useState(false)
-  const [domainVerifyResult, setDomainVerifyResult] = useState<{
-    verified: boolean
-    message: string
-    detectedIps: string[]
-  } | null>(null)
+  const [domainVerifyResult, setDomainVerifyResult] = useState<VerifyDomainResult | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -254,11 +250,7 @@ export default function BlogSettingsPage() {
     setDomainVerifyResult(null)
     try {
       const res = await api.domains.verify(blogId)
-      setDomainVerifyResult({
-        verified: res.verified,
-        message: res.message,
-        detectedIps: res.detectedIps,
-      })
+      setDomainVerifyResult(res)
       const b = await api.blogs.get(blogId)
       setBlog(b)
     } catch (err: any) {

@@ -255,5 +255,33 @@ class ApiIntegrationTest {
         assertEquals(HttpStatusCode.OK, postHtmlRes.status)
         val postHtml = postHtmlRes.bodyAsText()
         assertTrue(postHtml.contains("Integration Test Post"))
+
+        // 11. Test Custom Domain Configuration & DNS Verification
+        val updateDomainRes = client.put("/api/console/blogs/$blogId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(UpdateBlogRequest(customDomain = "testblog.localhost"))
+        }
+        assertEquals(HttpStatusCode.OK, updateDomainRes.status)
+
+        val verifyDomainRes = client.post("/api/console/blogs/$blogId/domain/verify") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+        assertEquals(HttpStatusCode.OK, verifyDomainRes.status)
+        val verifyResult = verifyDomainRes.body<VerifyDomainResponse>()
+        assertTrue(verifyResult.verified)
+        assertEquals(DnsStatus.VERIFIED, verifyResult.dnsStatus)
+        assertTrue(verifyResult.sslReady)
+        assertEquals("ACTIVE", verifyResult.sslStatus)
+
+        // 12. Test Caddy On-Demand TLS Internal Hook (/api/internal/check-domain)
+        val checkSubdomainRes = client.get("/api/internal/check-domain?domain=author-blog")
+        assertEquals(HttpStatusCode.OK, checkSubdomainRes.status)
+
+        val checkVerifiedCustomDomainRes = client.get("/api/internal/check-domain?domain=testblog.localhost")
+        assertEquals(HttpStatusCode.OK, checkVerifiedCustomDomainRes.status)
+
+        val checkUnknownDomainRes = client.get("/api/internal/check-domain?domain=completely-unknown-domain.com")
+        assertEquals(HttpStatusCode.NotFound, checkUnknownDomainRes.status)
     }
 }

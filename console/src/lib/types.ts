@@ -298,6 +298,8 @@ export interface VerifyDomainResult {
   verified: boolean
   detectedIps: string[]
   expectedCnameOrIp: string
+  sslReady?: boolean
+  sslStatus?: string
   message: string
 }
 

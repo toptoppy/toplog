@@ -13,6 +13,7 @@ import java.time.Instant
 class SchedulerService(
     private val webhookService: WebhookService? = null,
     private val revisionService: RevisionService? = null,
+    private val domainService: DomainService? = null,
     private val pollIntervalMs: Long = 30_000L
 ) {
     private val logger = LoggerFactory.getLogger(SchedulerService::class.java)
@@ -20,11 +21,17 @@ class SchedulerService(
     private var job: Job? = null
 
     fun start() {
-        logger.info("Starting Post Scheduler Service (interval: ${pollIntervalMs}ms)...")
+        logger.info("Starting Post Scheduler & Auto-DNS Service (interval: ${pollIntervalMs}ms)...")
         job = scope.launch {
+            var loopCount = 0
             while (isActive) {
                 try {
                     publishDuePosts()
+                    loopCount++
+                    // Auto-check pending custom domains every 2 cycles (~60s)
+                    if (loopCount % 2 == 0) {
+                        domainService?.autoVerifyPendingDomains()
+                    }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {

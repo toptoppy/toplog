@@ -61,7 +61,7 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
     val importService = ImportService(postService, tagService)
     val newsletterService = NewsletterService(postService)
     val analyticsService = AnalyticsService()
-    val schedulerService = SchedulerService(webhookService, revisionService)
+    val schedulerService = SchedulerService(webhookService, revisionService, domainService)
     if (startScheduler) {
         schedulerService.start()
         monitor.subscribe(ApplicationStopped) {
@@ -144,7 +144,7 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
     // 4. Routing
     routing {
         authRoutes(authService)
-        internalRoutes(blogService)
+        internalRoutes(blogService, domainService)
         consoleRoutes(
             blogService,
             postService,

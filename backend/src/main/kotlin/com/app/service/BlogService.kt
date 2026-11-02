@@ -170,6 +170,14 @@ class BlogService {
             .count() > 0
     }
 
+    suspend fun findBlogByExactDomain(domain: String): Blog? = dbQuery {
+        val cleanDomain = domain.substringBefore(':').lowercase().trim()
+        Blogs.selectAll()
+            .where { (Blogs.customDomain eq cleanDomain) or (Blogs.subdomain eq cleanDomain) }
+            .firstOrNull()
+            ?.toBlog()
+    }
+
     private fun ResultRow.toBlog(): Blog = Blog(
         id = this[Blogs.id].value,
         ownerId = this[Blogs.ownerId].value,
