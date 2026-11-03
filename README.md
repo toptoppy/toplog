@@ -9,6 +9,8 @@
 </p>
 
 <p align="center">
+  <a href="docs/COOKBOOK_TH.md"><strong>คู่มือ Cookbook (ภาษาไทย) &raquo;</strong></a>
+  <span> | </span>
   <a href="docs/DEPLOYMENT.md"><strong>Production Deployment Guide &raquo;</strong></a>
   <span> | </span>
   <a href="docs/SETUP_GUIDE.md"><strong>Setup &amp; Config Guide &raquo;</strong></a>
@@ -99,6 +101,7 @@ Add the following to your `/etc/hosts` file (macOS/Linux) or `C:\Windows\System3
 
 Detailed documentation is available in the [`docs/`](docs/) directory:
 
+- [**คู่มือ Cookbook (ภาษาไทย)**](docs/COOKBOOK_TH.md): คู่มือการใช้งานภาคปฏิบัติฉบับภาษาไทย ครอบคลุมการตั้งค่าโดเมน, สตูดิโอเขียนบทความ, AI, การตั้งเวลา, SEO, และการแก้ปัญหาทั่วไป
 - [**Production Deployment Guide**](docs/DEPLOYMENT.md): Production hosting instructions for cloud VPS (Hetzner, DigitalOcean, AWS), wildcard DNS, Caddy On-Demand TLS, and automated backups.
 - [**Setup & Config Guide**](docs/SETUP_GUIDE.md): Local development, environment configuration, custom domains, and platform architecture.
 - [**Architecture Deep Dive**](docs/ARCHITECTURE.md): Database ERD, subsystem internals, sequence diagrams, and security models.
