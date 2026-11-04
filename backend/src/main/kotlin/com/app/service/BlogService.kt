@@ -67,6 +67,11 @@ class BlogService {
         null
     }
 
+    suspend fun findBySubdomain(subdomain: String): Blog? = dbQuery {
+        val clean = subdomain.trim().lowercase()
+        Blogs.selectAll().where { Blogs.subdomain eq clean }.firstOrNull()?.toBlog()
+    }
+
     suspend fun createBlog(userId: Long, request: CreateBlogRequest): BlogDto {
         val sub = request.subdomain.trim().lowercase()
         require(sub.matches(Regex("^[a-z0-9-]+$"))) { "Subdomain must contain only lowercase letters, numbers, and hyphens" }

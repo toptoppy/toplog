@@ -86,3 +86,45 @@ data class SchedulerRunResponse(
     val publishedCount: Int,
     val message: String
 )
+
+@Serializable
+data class PublicPostListItemDto(
+    val id: Long,
+    val slug: String,
+    val title: String,
+    val description: String?,
+    val isFeatured: Boolean,
+    val isPage: Boolean,
+    val featuredImageUrl: String?,
+    val publishedAt: String?,
+    val publishedAtFormatted: String?,
+    val readingTimeMinutes: Int,
+    val tags: List<TagDto> = emptyList(),
+    val languageCode: String
+)
+
+@Serializable
+data class PublicPostDetailDto(
+    val id: Long,
+    val slug: String,
+    val title: String,
+    val description: String?,
+    val contentHtml: String,
+    val contentJson: String,
+    val isFeatured: Boolean,
+    val isPage: Boolean,
+    val featuredImageUrl: String?,
+    val canonicalUrl: String?,
+    val publishedAt: String?,
+    val publishedAtFormatted: String?,
+    val readingTimeMinutes: Int,
+    val wordCount: Int,
+    val tags: List<TagDto> = emptyList(),
+    val languageCode: String
+)
+
+@Serializable
+data class PublicPostsResponseDto(
+    val total: Int,
+    val posts: List<PublicPostListItemDto>
+)

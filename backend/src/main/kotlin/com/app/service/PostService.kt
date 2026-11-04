@@ -6,11 +6,17 @@ import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 class PostService(
     private val webhookService: WebhookService? = null,
     private val revisionService: RevisionService? = null
 ) {
+    private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
+        .withZone(ZoneId.of("UTC"))
+    private val isoFormatter = DateTimeFormatter.ISO_INSTANT
 
     suspend fun listPosts(
         blogId: Long,
@@ -116,6 +122,138 @@ class PostService(
                     tags = tags
                 )
             }
+    }
+
+    suspend fun listPublicPosts(
+        blogId: Long,
+        languageCode: String? = null,
+        tagSlug: String? = null,
+        isFeatured: Boolean? = null,
+        limit: Int = 50,
+        offset: Long = 0
+    ): List<PublicPostListItemDto> = dbQuery {
+        val cleanTag = tagSlug?.trim()?.lowercase()?.ifEmpty { null }
+        val cleanLang = languageCode?.trim()?.lowercase()?.ifEmpty { null }
+
+        var query = if (cleanTag != null) {
+            (Posts innerJoin PostVariants innerJoin PostTags innerJoin Tags).selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (Posts.isPage eq false) and
+                    (Tags.blogId eq blogId) and
+                    (Tags.slug eq cleanTag) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+        } else {
+            (Posts innerJoin PostVariants).selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (Posts.isPage eq false) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+        }
+
+        if (cleanLang != null) {
+            query = query.andWhere { PostVariants.languageCode eq cleanLang }
+        }
+        if (isFeatured != null) {
+            query = query.andWhere { Posts.isFeatured eq isFeatured }
+        }
+
+        query.orderBy(PostVariants.publishedAt to SortOrder.DESC)
+            .limit(limit)
+            .offset(offset)
+            .map { row ->
+                val postId = row[Posts.id].value
+                val tags = (PostTags innerJoin Tags).selectAll()
+                    .where { PostTags.postId eq postId }
+                    .map { tagRow ->
+                        TagDto(
+                            id = tagRow[Tags.id].value,
+                            blogId = tagRow[Tags.blogId].value,
+                            name = tagRow[Tags.name],
+                            slug = tagRow[Tags.slug]
+                        )
+                    }
+
+                val publishedAt = row[PostVariants.publishedAt]
+                val contentHtml = row[PostVariants.contentHtml]
+                val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+                val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
+
+                PublicPostListItemDto(
+                    id = postId,
+                    slug = row[PostVariants.slug],
+                    title = row[PostVariants.title],
+                    description = row[PostVariants.description],
+                    isFeatured = row[Posts.isFeatured],
+                    isPage = row[Posts.isPage],
+                    featuredImageUrl = row[Posts.featuredImageUrl],
+                    publishedAt = publishedAt?.let { isoFormatter.format(it) },
+                    publishedAtFormatted = publishedAt?.let { dateFormatter.format(it) },
+                    readingTimeMinutes = readingTime,
+                    tags = tags,
+                    languageCode = row[PostVariants.languageCode]
+                )
+            }
+    }
+
+    suspend fun getPublicPostBySlug(
+        blogId: Long,
+        slug: String,
+        languageCode: String? = null
+    ): PublicPostDetailDto? = dbQuery {
+        val cleanSlug = slug.trim().lowercase()
+        val cleanLang = languageCode?.trim()?.lowercase()?.ifEmpty { null }
+
+        var query = (Posts innerJoin PostVariants).selectAll()
+            .where {
+                (Posts.blogId eq blogId) and
+                (PostVariants.slug eq cleanSlug) and
+                (PostVariants.status eq PostStatus.PUBLISHED.name)
+            }
+
+        if (cleanLang != null) {
+            query = query.andWhere { PostVariants.languageCode eq cleanLang }
+        }
+
+        val row = query.firstOrNull() ?: return@dbQuery null
+        val postId = row[Posts.id].value
+
+        val tags = (PostTags innerJoin Tags).selectAll()
+            .where { PostTags.postId eq postId }
+            .map { tagRow ->
+                TagDto(
+                    id = tagRow[Tags.id].value,
+                    blogId = tagRow[Tags.blogId].value,
+                    name = tagRow[Tags.name],
+                    slug = tagRow[Tags.slug]
+                )
+            }
+
+        val publishedAt = row[PostVariants.publishedAt]
+        val contentHtml = row[PostVariants.contentHtml]
+        val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
+
+        PublicPostDetailDto(
+            id = postId,
+            slug = row[PostVariants.slug],
+            title = row[PostVariants.title],
+            description = row[PostVariants.description],
+            contentHtml = contentHtml,
+            contentJson = row[PostVariants.contentJson],
+            isFeatured = row[Posts.isFeatured],
+            isPage = row[Posts.isPage],
+            featuredImageUrl = row[Posts.featuredImageUrl],
+            canonicalUrl = row[Posts.canonicalUrl],
+            publishedAt = publishedAt?.let { isoFormatter.format(it) },
+            publishedAtFormatted = publishedAt?.let { dateFormatter.format(it) },
+            readingTimeMinutes = readingTime,
+            wordCount = wordCount,
+            tags = tags,
+            languageCode = row[PostVariants.languageCode]
+        )
     }
 
     suspend fun getPostById(postId: Long, blogId: Long): PostDto? = dbQuery {

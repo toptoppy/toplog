@@ -283,5 +283,23 @@ class ApiIntegrationTest {
 
         val checkUnknownDomainRes = client.get("/api/internal/check-domain?domain=completely-unknown-domain.com")
         assertEquals(HttpStatusCode.NotFound, checkUnknownDomainRes.status)
+
+        // 13. Test Public Headless Posts List (/api/public/posts)
+        val publicPostsRes = client.get("/api/public/posts?subdomain=author-blog")
+        assertEquals(HttpStatusCode.OK, publicPostsRes.status)
+        val publicPosts = publicPostsRes.body<PublicPostsResponseDto>()
+        assertTrue(publicPosts.total > 0)
+        assertEquals("integration-test-post", publicPosts.posts[0].slug)
+        assertEquals("Integration Test Post", publicPosts.posts[0].title)
+        assertTrue(publicPosts.posts[0].isFeatured)
+
+        // 14. Test Public Headless Post Detail (/api/public/posts/{slug})
+        val publicPostDetailRes = client.get("/api/public/posts/integration-test-post?subdomain=author-blog")
+        assertEquals(HttpStatusCode.OK, publicPostDetailRes.status)
+        val postDetail = publicPostDetailRes.body<PublicPostDetailDto>()
+        assertEquals("integration-test-post", postDetail.slug)
+        assertEquals("Integration Test Post", postDetail.title)
+        assertTrue(postDetail.contentHtml.contains("Integration test post content body"))
+        assertEquals("https://external.dev/original-article", postDetail.canonicalUrl)
     }
 }

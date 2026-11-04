@@ -2,12 +2,17 @@ package com.app.api.routing
 
 import com.app.api.dto.CreateCommentResponse
 import com.app.api.dto.PublicCreateCommentRequest
+import com.app.api.dto.PublicPostDetailDto
+import com.app.api.dto.PublicPostListItemDto
+import com.app.api.dto.PublicPostsResponseDto
 import com.app.api.dto.PublicSubscribeRequest
 import com.app.api.dto.RecordPageViewRequest
 import com.app.api.dto.SearchResponseDto
 import com.app.config.AppConfig
+import com.app.domain.model.Blog
 import com.app.service.*
 import io.ktor.http.*
+import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -23,10 +28,107 @@ fun Route.deliveryRoutes(
     ogImageService: OgImageService,
     config: AppConfig
 ) {
+    suspend fun resolveBlog(call: ApplicationCall): Blog? {
+        val paramBlog = call.request.queryParameters["blog"]
+            ?: call.request.queryParameters["subdomain"]
+            ?: call.request.headers["X-Blog-Subdomain"]
+        if (!paramBlog.isNullOrBlank()) {
+            val bySub = blogService.findBySubdomain(paramBlog)
+            if (bySub != null) return bySub
+        }
+        return blogService.findByHost(call.request.host(), config.baseDomain)
+    }
+
+    // Public Headless API: List published posts
+    get("/api/public/posts") {
+        val blog = resolveBlog(call)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
+
+        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val tag = call.request.queryParameters["tag"]
+        val featured = call.request.queryParameters["featured"]?.toBooleanStrictOrNull()
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
+        val offset = call.request.queryParameters["offset"]?.toLongOrNull()?.coerceAtLeast(0) ?: 0L
+
+        val posts = postService.listPublicPosts(
+            blogId = blog.id,
+            languageCode = lang,
+            tagSlug = tag,
+            isFeatured = featured,
+            limit = limit,
+            offset = offset
+        )
+
+        call.respond(
+            HttpStatusCode.OK,
+            PublicPostsResponseDto(
+                total = posts.size,
+                posts = posts
+            )
+        )
+    }
+
+    // Public Headless API: Single post detail by slug
+    get("/api/public/posts/{slug}") {
+        val blog = resolveBlog(call)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
+
+        val slug = call.parameters["slug"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Slug required"))
+
+        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val post = postService.getPublicPostBySlug(blog.id, slug, lang)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Post not found"))
+
+        call.respond(HttpStatusCode.OK, post)
+    }
+
+    // Alias: /api/posts and /api/posts/{slug}
+    get("/api/posts") {
+        val blog = resolveBlog(call)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
+
+        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val tag = call.request.queryParameters["tag"]
+        val featured = call.request.queryParameters["featured"]?.toBooleanStrictOrNull()
+        val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
+        val offset = call.request.queryParameters["offset"]?.toLongOrNull()?.coerceAtLeast(0) ?: 0L
+
+        val posts = postService.listPublicPosts(
+            blogId = blog.id,
+            languageCode = lang,
+            tagSlug = tag,
+            isFeatured = featured,
+            limit = limit,
+            offset = offset
+        )
+
+        call.respond(
+            HttpStatusCode.OK,
+            PublicPostsResponseDto(
+                total = posts.size,
+                posts = posts
+            )
+        )
+    }
+
+    get("/api/posts/{slug}") {
+        val blog = resolveBlog(call)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
+
+        val slug = call.parameters["slug"]
+            ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Slug required"))
+
+        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val post = postService.getPublicPostBySlug(blog.id, slug, lang)
+            ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Post not found"))
+
+        call.respond(HttpStatusCode.OK, post)
+    }
+
     // Public API: Dynamic Social Open Graph Card Image
     get("/api/og/{slug}") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound)
 
         val slug = call.parameters["slug"] ?: return@get call.respond(HttpStatusCode.BadRequest)
@@ -38,8 +140,7 @@ fun Route.deliveryRoutes(
     }
     // Public API: Reader Comments Submission
     post("/api/comments") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
         try {
@@ -64,8 +165,7 @@ fun Route.deliveryRoutes(
 
     // Public API: Fetch Approved Comments for Post
     get("/api/posts/{postId}/comments") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
         val postId = call.parameters["postId"]?.toLongOrNull()
@@ -76,8 +176,7 @@ fun Route.deliveryRoutes(
     }
     // Public API: Page View Tracking Beacon
     post("/api/analytics/view") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
         try {
@@ -99,8 +198,7 @@ fun Route.deliveryRoutes(
 
     // Public API: Instant Search Endpoint (supports ?q=... and/or ?tag=...)
     get("/api/search") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
 
         val query = call.request.queryParameters["q"] ?: ""
@@ -119,8 +217,7 @@ fun Route.deliveryRoutes(
 
     // Public API: Public Tags Listing with Article Counts
     get("/api/tags") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound, "Blog not found")
 
         val tags = tagService.listPublicTags(blog.id)
@@ -129,8 +226,7 @@ fun Route.deliveryRoutes(
 
     // Public API: Member Newsletter Subscribe Endpoint
     post("/api/subscribe") {
-        val host = call.request.host()
-        val blog = blogService.findByHost(host, config.baseDomain)
+        val blog = resolveBlog(call)
             ?: return@post call.respond(HttpStatusCode.NotFound, "Blog not found")
 
         try {
