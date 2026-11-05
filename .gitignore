@@ -34,3 +34,7 @@ tmp/
 testing/
 tests.html
 data.ms/
+
+# Agent & Impeccable Tools
+.agent/
+.impeccable/

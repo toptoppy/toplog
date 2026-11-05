@@ -329,12 +329,13 @@
             });
         }
 
+        // --- 4. Reading Progress Bar (60fps compositor scaleX) ---
         var progBar = document.getElementById('reading-progress-bar');
         if (progBar) {
             window.addEventListener('scroll', function() {
                 var docH = document.documentElement.scrollHeight - window.innerHeight;
-                var pct = docH > 0 ? (window.scrollY / docH) * 100 : 0;
-                progBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+                var pct = docH > 0 ? (window.scrollY / docH) : 0;
+                progBar.style.transform = 'scaleX(' + Math.min(1, Math.max(0, pct)) + ')';
             }, { passive: true });
         }
     })();
