@@ -44,7 +44,7 @@ fun Route.deliveryRoutes(
         val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
-        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val lang = call.request.queryParameters["lang"]?.takeIf { it.lowercase() != "all" && it.isNotBlank() }
         val tag = call.request.queryParameters["tag"]
         val featured = call.request.queryParameters["featured"]?.toBooleanStrictOrNull()
         val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
@@ -76,7 +76,7 @@ fun Route.deliveryRoutes(
         val slug = call.parameters["slug"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Slug required"))
 
-        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val lang = call.request.queryParameters["lang"]?.takeIf { it.lowercase() != "all" && it.isNotBlank() }
         val post = postService.getPublicPostBySlug(blog.id, slug, lang)
             ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Post not found"))
 
@@ -88,7 +88,7 @@ fun Route.deliveryRoutes(
         val blog = resolveBlog(call)
             ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
-        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val lang = call.request.queryParameters["lang"]?.takeIf { it.lowercase() != "all" && it.isNotBlank() }
         val tag = call.request.queryParameters["tag"]
         val featured = call.request.queryParameters["featured"]?.toBooleanStrictOrNull()
         val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, 100) ?: 50
@@ -119,7 +119,7 @@ fun Route.deliveryRoutes(
         val slug = call.parameters["slug"]
             ?: return@get call.respond(HttpStatusCode.BadRequest, mapOf("error" to "Slug required"))
 
-        val lang = call.request.queryParameters["lang"] ?: blog.defaultLanguage
+        val lang = call.request.queryParameters["lang"]?.takeIf { it.lowercase() != "all" && it.isNotBlank() }
         val post = postService.getPublicPostBySlug(blog.id, slug, lang)
             ?: return@get call.respond(HttpStatusCode.NotFound, mapOf("error" to "Post not found"))
 
