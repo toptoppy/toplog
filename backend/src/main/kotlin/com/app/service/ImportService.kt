@@ -3,6 +3,8 @@ package com.app.service
 import com.app.api.dto.CreatePostRequest
 import com.app.api.dto.ImportResultDto
 import com.app.domain.model.PostStatus
+import org.commonmark.ext.autolink.AutolinkExtension
+import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
 import org.slf4j.LoggerFactory
@@ -19,8 +21,9 @@ class ImportService(
     private val tagService: TagService
 ) {
     private val logger = LoggerFactory.getLogger(ImportService::class.java)
-    private val mdParser = Parser.builder().build()
-    private val htmlRenderer = HtmlRenderer.builder().build()
+    private val extensions = listOf(TablesExtension.create(), AutolinkExtension.create())
+    private val mdParser = Parser.builder().extensions(extensions).build()
+    private val htmlRenderer = HtmlRenderer.builder().extensions(extensions).build()
 
     suspend fun importWordPressXml(
         blogId: Long,

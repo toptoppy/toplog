@@ -46,8 +46,10 @@ dependencies {
     // Theme Engine: Pebble Templates (Twig-compatible JVM engine)
     implementation("io.pebbletemplates:pebble:3.2.2")
 
-    // Markdown Parser
+    // Markdown Parser & Extensions
     implementation("org.commonmark:commonmark:0.24.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
+    implementation("org.commonmark:commonmark-ext-autolink:0.24.0")
 
     // Security & Auth
     implementation("org.mindrot:jbcrypt:0.4")
