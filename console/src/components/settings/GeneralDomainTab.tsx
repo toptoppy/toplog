@@ -336,7 +336,7 @@ export default function GeneralDomainTab({
             onClick={handleExportArchive}
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition shrink-0"
           >
-            <Download className={`h-4 w-4 ${exportingArchive ? 'animate-bounce text-blue-600' : 'text-slate-500'}`} />
+            <Download className={`h-4 w-4 ${exportingArchive ? 'animate-pulse text-blue-600' : 'text-slate-500'}`} />
             {exportingArchive ? 'Generating Archive...' : 'Download Full Archive (.zip)'}
           </button>
         </div>

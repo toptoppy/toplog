@@ -225,7 +225,7 @@ export default function PostSettingsDrawer({
                     key={idx}
                     type="button"
                     onClick={() => setTitle(altTitle)}
-                    className="w-full text-left text-xs text-zinc-800 bg-white hover:bg-purple-50 border border-zinc-200 hover:border-purple-300 rounded px-2 py-1 transition truncate block"
+                    className="w-full text-left text-xs text-zinc-800 bg-white hover:bg-purple-50 hover:text-purple-900 border border-zinc-200 hover:border-purple-300 rounded px-2 py-1 transition truncate block"
                     title={altTitle}
                   >
                     {altTitle}
