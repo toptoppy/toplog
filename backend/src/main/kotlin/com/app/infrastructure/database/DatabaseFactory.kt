@@ -35,6 +35,7 @@ object DatabaseFactory {
             .dataSource(ds)
             .locations("classpath:db/migration")
             .baselineOnMigrate(true)
+            .placeholderReplacement(false)
             .load()
             .migrate()
 
