@@ -7,6 +7,7 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import { api } from '@/lib/api'
+import MediaVaultDrawer from './MediaVaultDrawer'
 import {
   Bold,
   Italic,
@@ -28,6 +29,11 @@ import {
   Minimize2,
   Eye,
   Edit3,
+  FolderOpen,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Trash2,
 } from 'lucide-react'
 
 interface TipTapEditorProps {
@@ -50,6 +56,7 @@ export default function TipTapEditor({
   onWordCountChange,
 }: TipTapEditorProps) {
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [showVaultDrawer, setShowVaultDrawer] = useState(false)
   const [isZenMode, setIsZenMode] = useState(false)
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [wordCount, setWordCount] = useState(0)
@@ -58,6 +65,7 @@ export default function TipTapEditor({
   // Floating Bubble Menu State
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null)
   const [isTextSelected, setIsTextSelected] = useState(false)
+  const [isImageSelected, setIsImageSelected] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<any>(null)
@@ -167,8 +175,11 @@ export default function TipTapEditor({
 
     const updateBubble = () => {
       const { from, to, empty } = editor.state.selection
-      if (empty || editor.isActive('image')) {
+      const hasImageActive = editor.isActive('image')
+
+      if (empty && !hasImageActive) {
         setIsTextSelected(false)
+        setIsImageSelected(false)
         setBubblePos(null)
         return
       }
@@ -182,7 +193,8 @@ export default function TipTapEditor({
       const top = Math.min(start.top, end.top) - 10
 
       setBubblePos({ top, left })
-      setIsTextSelected(true)
+      setIsTextSelected(!hasImageActive && !empty)
+      setIsImageSelected(hasImageActive)
     }
 
     editor.on('selectionUpdate', updateBubble)
@@ -256,132 +268,192 @@ export default function TipTapEditor({
   }
 
   // Floating Selection Bubble Menu
-  const floatingBubbleMenu = isTextSelected && bubblePos && activeTab === 'edit' ? (
-    <div
-      data-bubble-menu
-      style={{
-        position: 'fixed',
-        top: `${bubblePos.top}px`,
-        left: `${bubblePos.left}px`,
-        transform: 'translate(-50%, -100%)',
-      }}
-      className="z-50 flex items-center gap-0.5 rounded-xl border border-zinc-700/80 bg-zinc-900/95 p-1 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 select-none"
-    >
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleBold().run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('bold') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Bold (Cmd+B)"
-      >
-        <Bold className="h-3.5 w-3.5" />
-      </button>
+  const floatingBubbleMenu =
+    bubblePos && activeTab === 'edit' ? (
+      isImageSelected ? (
+        <div
+          data-bubble-menu
+          style={{
+            position: 'fixed',
+            top: `${bubblePos.top}px`,
+            left: `${bubblePos.left}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          className="z-50 flex items-center gap-0.5 rounded-xl border border-zinc-700/80 bg-zinc-900/95 p-1 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 select-none"
+        >
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().updateAttributes('image', { class: 'mr-auto text-left' }).run()
+            }}
+            className="rounded p-1.5 hover:bg-zinc-800 transition text-zinc-300 hover:text-white"
+            title="Align Left"
+          >
+            <AlignLeft className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().updateAttributes('image', { class: 'mx-auto block text-center' }).run()
+            }}
+            className="rounded p-1.5 hover:bg-zinc-800 transition text-zinc-300 hover:text-white"
+            title="Align Center"
+          >
+            <AlignCenter className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().updateAttributes('image', { class: 'ml-auto text-right' }).run()
+            }}
+            className="rounded p-1.5 hover:bg-zinc-800 transition text-zinc-300 hover:text-white"
+            title="Align Right"
+          >
+            <AlignRight className="h-3.5 w-3.5" />
+          </button>
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().deleteSelection().run()
+            }}
+            className="rounded p-1.5 hover:bg-red-950/80 transition text-red-400 hover:text-red-300"
+            title="Delete Image"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : isTextSelected ? (
+        <div
+          data-bubble-menu
+          style={{
+            position: 'fixed',
+            top: `${bubblePos.top}px`,
+            left: `${bubblePos.left}px`,
+            transform: 'translate(-50%, -100%)',
+          }}
+          className="z-50 flex items-center gap-0.5 rounded-xl border border-zinc-700/80 bg-zinc-900/95 p-1 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 select-none"
+        >
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleBold().run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('bold') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Bold (Cmd+B)"
+          >
+            <Bold className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleItalic().run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('italic') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Italic (Cmd+I)"
-      >
-        <Italic className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleItalic().run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('italic') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Italic (Cmd+I)"
+          >
+            <Italic className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleStrike().run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('strike') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Strikethrough"
-      >
-        <Strikethrough className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleStrike().run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('strike') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Strikethrough"
+          >
+            <Strikethrough className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleCode().run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('code') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Inline Code"
-      >
-        <Code className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleCode().run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('code') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Inline Code"
+          >
+            <Code className="h-3.5 w-3.5" />
+          </button>
 
-      <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
+          <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleHeading({ level: 2 }).run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('heading', { level: 2 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Heading 2"
-      >
-        <Heading2 className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleHeading({ level: 2 }).run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('heading', { level: 2 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Heading 2"
+          >
+            <Heading2 className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleHeading({ level: 3 }).run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('heading', { level: 3 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Heading 3"
-      >
-        <Heading3 className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleHeading({ level: 3 }).run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('heading', { level: 3 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Heading 3"
+          >
+            <Heading3 className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          editor.chain().focus().toggleBlockquote().run()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('blockquote') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Quote"
-      >
-        <Quote className="h-3.5 w-3.5" />
-      </button>
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              editor.chain().focus().toggleBlockquote().run()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('blockquote') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Quote"
+          >
+            <Quote className="h-3.5 w-3.5" />
+          </button>
 
-      <button
-        type="button"
-        onMouseDown={(e) => {
-          e.preventDefault()
-          setLink()
-        }}
-        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
-          editor.isActive('link') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
-        }`}
-        title="Link"
-      >
-        <LinkIcon className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  ) : null
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              setLink()
+            }}
+            className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+              editor.isActive('link') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
+            }`}
+            title="Link"
+          >
+            <LinkIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : null
+    ) : null
 
   const toolbarContent = (
     <div className="flex flex-wrap items-center justify-between gap-1 border-b border-zinc-200/80 bg-zinc-50/70 p-2 text-zinc-600">
@@ -542,6 +614,18 @@ export default function TipTapEditor({
           <Globe className="h-4 w-4 text-zinc-500" />
         </button>
 
+        {blogId && (
+          <button
+            type="button"
+            onClick={() => setShowVaultDrawer(true)}
+            className="rounded p-1.5 hover:bg-zinc-200/80 transition flex items-center gap-1 text-zinc-700 hover:text-blue-600"
+            title="Open Media Vault"
+          >
+            <FolderOpen className="h-4 w-4 text-blue-600" />
+            <span className="hidden md:inline text-xs font-medium">Vault</span>
+          </button>
+        )}
+
         <div className="h-4 w-px bg-zinc-200 mx-1"></div>
 
         <button
@@ -614,6 +698,24 @@ export default function TipTapEditor({
     </div>
   )
 
+  const uploadBanner = uploadingImage && (
+    <div className="flex items-center gap-2 bg-blue-50 border-b border-blue-100 px-4 py-2 text-xs text-blue-700 font-medium animate-pulse">
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-blue-600 shrink-0" />
+      <span>Uploading asset to TopLog Media Vault...</span>
+    </div>
+  )
+
+  const mediaVaultDrawer = (
+    <MediaVaultDrawer
+      isOpen={showVaultDrawer}
+      onClose={() => setShowVaultDrawer(false)}
+      blogId={blogId}
+      onInsertImage={(url, alt) => {
+        editor.chain().focus().setImage({ src: url, alt }).run()
+      }}
+    />
+  )
+
   const contentRenderer = activeTab === 'preview' ? (
     <div className="prose max-w-none text-zinc-900 leading-relaxed font-serif text-lg py-4">
       <div
@@ -631,6 +733,7 @@ export default function TipTapEditor({
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-white overflow-y-auto animate-in fade-in duration-200">
         {floatingBubbleMenu}
+        {uploadBanner}
         {/* Floating Zen Header Bar */}
         <div className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200/80 bg-white/90 px-6 py-3 backdrop-blur-md">
           <div className="flex items-center gap-3">
@@ -687,6 +790,7 @@ export default function TipTapEditor({
             {contentRenderer}
           </div>
         </div>
+        {mediaVaultDrawer}
       </div>
     )
   }
@@ -695,10 +799,12 @@ export default function TipTapEditor({
     return (
       <div className="w-full flex flex-col">
         {floatingBubbleMenu}
+        {uploadBanner}
         {toolbarContent}
         <div className="p-6 min-h-[460px]">
           {contentRenderer}
         </div>
+        {mediaVaultDrawer}
       </div>
     )
   }
@@ -706,10 +812,12 @@ export default function TipTapEditor({
   return (
     <div className="rounded-xl border border-zinc-200/90 bg-white shadow-xs overflow-hidden focus-within:border-zinc-300">
       {floatingBubbleMenu}
+      {uploadBanner}
       {toolbarContent}
       <div className="p-6 min-h-[420px]">
         {contentRenderer}
       </div>
+      {mediaVaultDrawer}
     </div>
   )
 }
