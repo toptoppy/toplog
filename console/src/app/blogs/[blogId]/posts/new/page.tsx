@@ -25,6 +25,21 @@ export default function NewPostPage() {
   const [featuredImageUrl, setFeaturedImageUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [wordCount, setWordCount] = useState(0)
+  const [readingMinutes, setReadingMinutes] = useState(1)
+
+  // Keyboard Shortcuts: Cmd+S / Ctrl+S to save draft
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !e.shiftKey) {
+        e.preventDefault()
+        handleSave('DRAFT')
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [blogId, title, slug, languageCode, description, contentHtml, contentJson, isFeatured, isPage, featuredImageUrl])
 
   useEffect(() => {
     api.blogs.get(blogId).then((b) => {
@@ -91,7 +106,12 @@ export default function NewPostPage() {
           <span>Back to Posts</span>
         </Link>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {wordCount > 0 && (
+            <span className="hidden sm:inline-flex items-center font-mono text-[11px] text-zinc-400">
+              {wordCount} words · {readingMinutes} min read
+            </span>
+          )}
           <button
             type="button"
             disabled={saving}
@@ -183,6 +203,10 @@ export default function NewPostPage() {
           content={contentHtml}
           embedded={true}
           blogId={blogId}
+          onWordCountChange={(words, minutes) => {
+            setWordCount(words)
+            setReadingMinutes(minutes)
+          }}
           onChange={(html, json) => {
             setContentHtml(html)
             setContentJson(json)

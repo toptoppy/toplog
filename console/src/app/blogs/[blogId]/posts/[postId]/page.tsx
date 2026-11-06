@@ -13,6 +13,8 @@ import SendNewsletterModal from '@/components/posts/SendNewsletterModal'
 import SchedulePostModal from '@/components/posts/SchedulePostModal'
 import PostRevisionsModal from '@/components/posts/PostRevisionsModal'
 import SeoPreviewModal from '@/components/posts/SeoPreviewModal'
+import KeyboardShortcutsModal from '@/components/posts/KeyboardShortcutsModal'
+import PublishChecklistPopover from '@/components/posts/PublishChecklistPopover'
 import {
   ChevronLeft,
   Save,
@@ -31,6 +33,8 @@ import {
   RotateCcw,
   X,
   ArrowRight,
+  Command,
+  CheckSquare,
 } from 'lucide-react'
 
 export default function PostStudioPage() {
@@ -94,6 +98,17 @@ export default function PostStudioPage() {
   const [selectedRevision, setSelectedRevision] = useState<PostRevision | null>(null)
   const [restoringRevision, setRestoringRevision] = useState(false)
 
+  // Auto-Save & Writing Metrics State
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved' | 'error'>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [wordCount, setWordCount] = useState(0)
+  const [readingMinutes, setReadingMinutes] = useState(1)
+  const [showShortcutsModal, setShowShortcutsModal] = useState(false)
+  const [showChecklistPopover, setShowChecklistPopover] = useState(false)
+
+  const isInitialMountRef = useRef(true)
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -118,6 +133,10 @@ export default function PostStudioPage() {
 
       if (defaultVariant) {
         selectVariant(defaultVariant)
+      } else {
+        setTimeout(() => {
+          isInitialMountRef.current = false
+        }, 500)
       }
 
       api.ai.status(blogId).then(setAiStatus).catch(console.error)
@@ -133,6 +152,10 @@ export default function PostStudioPage() {
   }, [blogId, postId])
 
   const selectVariant = (variant: PostVariant) => {
+    isInitialMountRef.current = true
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
     setActiveLang(variant.languageCode)
     setTitle(variant.title)
     setSlug(variant.slug)
@@ -141,7 +164,75 @@ export default function PostStudioPage() {
     setContentJson(variant.contentJson || '{}')
     setStatus(variant.status)
     setScheduledAt(variant.scheduledAt || null)
+    setAutoSaveStatus('idle')
+
+    setTimeout(() => {
+      isInitialMountRef.current = false
+    }, 500)
   }
+
+  // Live Auto-Save Debounce Effect (2.5s debounce)
+  useEffect(() => {
+    if (isInitialMountRef.current || loading || !post) return
+
+    setAutoSaveStatus('unsaved')
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaveStatus('saving')
+      try {
+        await api.posts.updateVariant(blogId, postId, activeLang, {
+          title,
+          slug,
+          description,
+          contentHtml,
+          contentJson,
+          status,
+          scheduledAt: status === 'SCHEDULED' ? (scheduledAt || undefined) : undefined,
+        })
+        setAutoSaveStatus('saved')
+        setLastSavedAt(new Date())
+      } catch (err: any) {
+        console.error('Auto-save error:', err)
+        setAutoSaveStatus('error')
+      }
+    }, 2500)
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current)
+      }
+    }
+  }, [title, slug, description, contentHtml, contentJson])
+
+  // Keyboard Shortcuts: Cmd+S / Ctrl+S to save draft, ? to show cheat sheet
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's' && !e.shiftKey) {
+        e.preventDefault()
+        handleSaveVariant('DRAFT')
+      }
+
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) {
+        const target = e.target as HTMLElement
+        const isInputField =
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable ||
+          Boolean(target.closest('.ProseMirror'))
+        if (!isInputField) {
+          e.preventDefault()
+          setShowShortcutsModal((prev) => !prev)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [blogId, postId, activeLang, title, slug, description, contentHtml, contentJson, isFeatured, isPage, featuredImageUrl, canonicalUrl, scheduledAt, status])
 
   const loadRevisions = async () => {
     setLoadingRevisions(true)
@@ -177,9 +268,13 @@ export default function PostStudioPage() {
   }
 
   const handleSaveVariant = async (overrideStatus?: PostStatus, overrideScheduledAt?: string) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
     setError('')
     setMessage('')
     setSaving(true)
+    setAutoSaveStatus('saving')
 
     const nextStatus = overrideStatus || status
     const nextScheduledAt =
@@ -224,10 +319,14 @@ export default function PostStudioPage() {
           : 'Draft saved successfully!'
       )
 
+      setAutoSaveStatus('saved')
+      setLastSavedAt(new Date())
+
       // Refresh post
       const refreshedPost = await api.posts.get(blogId, postId)
       setPost(refreshedPost)
     } catch (err: any) {
+      setAutoSaveStatus('error')
       setError(err.message || 'Failed to save post')
     } finally {
       setSaving(false)
@@ -407,6 +506,45 @@ export default function PostStudioPage() {
               {status}
             </span>
 
+            {/* Live Auto-Save Status Pill */}
+            <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-mono border bg-white border-zinc-200 shadow-2xs">
+              {autoSaveStatus === 'saving' ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span className="text-blue-600 font-medium">Auto-saving...</span>
+                </>
+              ) : autoSaveStatus === 'saved' ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-zinc-600">
+                    {lastSavedAt
+                      ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      : 'Saved'}
+                  </span>
+                </>
+              ) : autoSaveStatus === 'unsaved' ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  <span className="text-amber-700">Unsaved changes</span>
+                </>
+              ) : autoSaveStatus === 'error' ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                  <span className="text-red-600">Auto-save error</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-300" />
+                  <span className="text-zinc-500">Draft clean</span>
+                </>
+              )}
+            </div>
+
+            {/* Metrics Telemetry */}
+            <span className="hidden md:inline-flex items-center font-mono text-[11px] text-zinc-400">
+              {wordCount} words · {readingMinutes} min read
+            </span>
+
             {status === 'SCHEDULED' && scheduledAt && (
               <span className="text-[11px] text-purple-600 font-mono">
                 Due: {new Date(scheduledAt).toLocaleString([], {
@@ -481,6 +619,16 @@ export default function PostStudioPage() {
             <SettingsIcon className="h-3.5 w-3.5" />
           </button>
 
+          {/* Keyboard Shortcuts Button */}
+          <button
+            type="button"
+            onClick={() => setShowShortcutsModal(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition"
+            title="Keyboard shortcuts (?)"
+          >
+            <Command className="h-3.5 w-3.5" />
+          </button>
+
           <button
             type="button"
             disabled={saving}
@@ -520,6 +668,40 @@ export default function PostStudioPage() {
             <Clock className="h-3.5 w-3.5 text-purple-600" />
             <span>{status === 'SCHEDULED' ? 'Reschedule' : 'Schedule'}</span>
           </button>
+
+          {/* Pre-flight Checklist Popover Trigger */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowChecklistPopover(!showChecklistPopover)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition"
+              title="Publishing pre-flight checklist"
+            >
+              <CheckSquare className="h-3.5 w-3.5 text-zinc-400" />
+              <span>Pre-flight</span>
+            </button>
+
+            {showChecklistPopover && (
+              <div className="absolute right-0 top-full mt-2 z-50">
+                <PublishChecklistPopover
+                  title={title}
+                  slug={slug}
+                  contentHtml={contentHtml}
+                  wordCount={wordCount}
+                  description={description}
+                  featuredImageUrl={featuredImageUrl}
+                  onOpenSettings={() => {
+                    setShowChecklistPopover(false)
+                    setShowSettingsSidebar(true)
+                  }}
+                  onOpenSeo={() => {
+                    setShowChecklistPopover(false)
+                    setShowSeoPreviewModal(true)
+                  }}
+                />
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
@@ -632,6 +814,10 @@ export default function PostStudioPage() {
             content={contentHtml}
             embedded={true}
             blogId={blogId}
+            onWordCountChange={(words, minutes) => {
+              setWordCount(words)
+              setReadingMinutes(minutes)
+            }}
             onChange={(html, json) => {
               setContentHtml(html)
               setContentJson(json)
@@ -742,6 +928,11 @@ export default function PostStudioPage() {
         setSelectedRevision={setSelectedRevision}
         restoringRevision={restoringRevision}
         onRestore={handleRestoreRevision}
+      />
+
+      <KeyboardShortcutsModal
+        isOpen={showShortcutsModal}
+        onClose={() => setShowShortcutsModal(false)}
       />
     </div>
   )

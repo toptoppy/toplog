@@ -24,6 +24,10 @@ import {
   ImageIcon,
   Loader2,
   Globe,
+  Maximize2,
+  Minimize2,
+  Eye,
+  Edit3,
 } from 'lucide-react'
 
 interface TipTapEditorProps {
@@ -33,6 +37,7 @@ interface TipTapEditorProps {
   onImageUpload?: () => void
   embedded?: boolean
   blogId?: number
+  onWordCountChange?: (words: number, minutes: number) => void
 }
 
 export default function TipTapEditor({
@@ -42,8 +47,18 @@ export default function TipTapEditor({
   onImageUpload,
   embedded = false,
   blogId,
+  onWordCountChange,
 }: TipTapEditorProps) {
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [isZenMode, setIsZenMode] = useState(false)
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
+  const [wordCount, setWordCount] = useState(0)
+  const [readingMinutes, setReadingMinutes] = useState(1)
+
+  // Floating Bubble Menu State
+  const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null)
+  const [isTextSelected, setIsTextSelected] = useState(false)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<any>(null)
 
@@ -124,12 +139,73 @@ export default function TipTapEditor({
       const html = editor.getHTML()
       const json = JSON.stringify(editor.getJSON())
       onChange(html, json)
+
+      const text = editor.getText()
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0
+      const minutes = Math.max(1, Math.ceil(words / 200))
+      setWordCount(words)
+      setReadingMinutes(minutes)
+      onWordCountChange?.(words, minutes)
     },
   })
 
   useEffect(() => {
     editorRef.current = editor
+    if (editor) {
+      const text = editor.getText()
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0
+      const minutes = Math.max(1, Math.ceil(words / 200))
+      setWordCount(words)
+      setReadingMinutes(minutes)
+      onWordCountChange?.(words, minutes)
+    }
+  }, [editor, onWordCountChange])
+
+  // Track selection for the floating bubble menu
+  useEffect(() => {
+    if (!editor) return
+
+    const updateBubble = () => {
+      const { from, to, empty } = editor.state.selection
+      if (empty || editor.isActive('image')) {
+        setIsTextSelected(false)
+        setBubblePos(null)
+        return
+      }
+
+      const { view } = editor
+      const start = view.coordsAtPos(from)
+      const end = view.coordsAtPos(to)
+
+      // Center the menu above selection
+      const left = (start.left + end.right) / 2
+      const top = Math.min(start.top, end.top) - 10
+
+      setBubblePos({ top, left })
+      setIsTextSelected(true)
+    }
+
+    editor.on('selectionUpdate', updateBubble)
+
+    return () => {
+      editor.off('selectionUpdate', updateBubble)
+    }
   }, [editor])
+
+  // Zen Mode Keyboard Shortcuts: Esc to exit, Cmd+Shift+F to toggle
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && isZenMode) {
+        setIsZenMode(false)
+      } else if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        setIsZenMode((prev) => !prev)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isZenMode])
 
   if (!editor) {
     return (
@@ -164,7 +240,6 @@ export default function TipTapEditor({
     if (file) {
       uploadAndInsertImage(file)
     }
-    // reset input value so re-selecting same file triggers onChange
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -180,212 +255,460 @@ export default function TipTapEditor({
     }
   }
 
-  const toolbarContent = (
-    <div className="flex flex-wrap items-center gap-1 border-b border-zinc-200/80 bg-zinc-50/70 p-2 text-zinc-600">
+  // Floating Selection Bubble Menu
+  const floatingBubbleMenu = isTextSelected && bubblePos && activeTab === 'edit' ? (
+    <div
+      data-bubble-menu
+      style={{
+        position: 'fixed',
+        top: `${bubblePos.top}px`,
+        left: `${bubblePos.left}px`,
+        transform: 'translate(-50%, -100%)',
+      }}
+      className="z-50 flex items-center gap-0.5 rounded-xl border border-zinc-700/80 bg-zinc-900/95 p-1 text-white shadow-2xl backdrop-blur-md animate-in fade-in zoom-in-95 duration-150 select-none"
+    >
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleBold().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('bold') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleBold().run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('bold') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
-        title="Bold"
+        title="Bold (Cmd+B)"
       >
-        <Bold className="h-4 w-4" />
+        <Bold className="h-3.5 w-3.5" />
       </button>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleItalic().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('italic') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleItalic().run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('italic') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
-        title="Italic"
+        title="Italic (Cmd+I)"
       >
-        <Italic className="h-4 w-4" />
+        <Italic className="h-3.5 w-3.5" />
       </button>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleStrike().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('strike') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleStrike().run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('strike') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
         title="Strikethrough"
       >
-        <Strikethrough className="h-4 w-4" />
+        <Strikethrough className="h-3.5 w-3.5" />
       </button>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleCode().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('code') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleCode().run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('code') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
         title="Inline Code"
       >
-        <Code className="h-4 w-4" />
+        <Code className="h-3.5 w-3.5" />
       </button>
 
-      <div className="h-4 w-px bg-zinc-200 mx-1"></div>
+      <div className="h-3.5 w-px bg-zinc-700 mx-0.5" />
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('heading', { level: 1 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
-        }`}
-        title="Heading 1"
-      >
-        <Heading1 className="h-4 w-4" />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('heading', { level: 2 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleHeading({ level: 2 }).run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('heading', { level: 2 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
         title="Heading 2"
       >
-        <Heading2 className="h-4 w-4" />
+        <Heading2 className="h-3.5 w-3.5" />
       </button>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('heading', { level: 3 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleHeading({ level: 3 }).run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('heading', { level: 3 }) ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
         title="Heading 3"
       >
-        <Heading3 className="h-4 w-4" />
+        <Heading3 className="h-3.5 w-3.5" />
       </button>
-
-      <div className="h-4 w-px bg-zinc-200 mx-1"></div>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleBulletList().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('bulletList') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          editor.chain().focus().toggleBlockquote().run()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('blockquote') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
-        title="Bullet List"
+        title="Quote"
       >
-        <List className="h-4 w-4" />
+        <Quote className="h-3.5 w-3.5" />
       </button>
 
       <button
         type="button"
-        onClick={() => editor.chain().focus().toggleOrderedList().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('orderedList') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+        onMouseDown={(e) => {
+          e.preventDefault()
+          setLink()
+        }}
+        className={`rounded p-1.5 hover:bg-zinc-800 transition ${
+          editor.isActive('link') ? 'bg-zinc-800 text-blue-400' : 'text-zinc-300'
         }`}
-        title="Numbered List"
+        title="Link"
       >
-        <ListOrdered className="h-4 w-4" />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('blockquote') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
-        }`}
-        title="Blockquote"
-      >
-        <Quote className="h-4 w-4" />
-      </button>
-
-      <div className="h-4 w-px bg-zinc-200 mx-1"></div>
-
-      <button
-        type="button"
-        onClick={setLink}
-        className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
-          editor.isActive('link') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
-        }`}
-        title="Insert Link"
-      >
-        <LinkIcon className="h-4 w-4" />
-      </button>
-
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept="image/*"
-        onChange={handleFileInputChange}
-        className="hidden"
-      />
-
-      <button
-        type="button"
-        disabled={uploadingImage}
-        onClick={handleImageClick}
-        className="rounded p-1.5 hover:bg-zinc-200/80 transition flex items-center gap-1 disabled:opacity-50"
-        title="Upload Image from computer (or drag & drop / paste)"
-      >
-        {uploadingImage ? (
-          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-        ) : (
-          <ImageIcon className="h-4 w-4" />
-        )}
-      </button>
-
-      <button
-        type="button"
-        onClick={addImageByUrl}
-        className="rounded p-1.5 hover:bg-zinc-200/80 transition"
-        title="Insert Image via Web URL"
-      >
-        <Globe className="h-4 w-4 text-zinc-500" />
-      </button>
-
-      {uploadingImage && (
-        <span className="text-[11px] font-mono text-blue-600 animate-pulse ml-1">
-          Uploading image...
-        </span>
-      )}
-
-      <div className="h-4 w-px bg-zinc-200 mx-1"></div>
-
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().undo().run()}
-        disabled={!editor.can().undo()}
-        className="rounded p-1.5 hover:bg-zinc-200/80 transition disabled:opacity-30"
-        title="Undo"
-      >
-        <Undo className="h-4 w-4" />
-      </button>
-
-      <button
-        type="button"
-        onClick={() => editor.chain().focus().redo().run()}
-        disabled={!editor.can().redo()}
-        className="rounded p-1.5 hover:bg-zinc-200/80 transition disabled:opacity-30"
-        title="Redo"
-      >
-        <Redo className="h-4 w-4" />
+        <LinkIcon className="h-3.5 w-3.5" />
       </button>
     </div>
+  ) : null
+
+  const toolbarContent = (
+    <div className="flex flex-wrap items-center justify-between gap-1 border-b border-zinc-200/80 bg-zinc-50/70 p-2 text-zinc-600">
+      <div className="flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBold().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('bold') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Bold (Cmd+B)"
+        >
+          <Bold className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleItalic().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('italic') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Italic (Cmd+I)"
+        >
+          <Italic className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('strike') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Strikethrough"
+        >
+          <Strikethrough className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCode().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('code') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Inline Code"
+        >
+          <Code className="h-4 w-4" />
+        </button>
+
+        <div className="h-4 w-px bg-zinc-200 mx-1"></div>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('heading', { level: 1 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Heading 1"
+        >
+          <Heading1 className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('heading', { level: 2 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Heading 2"
+        >
+          <Heading2 className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('heading', { level: 3 }) ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Heading 3"
+        >
+          <Heading3 className="h-4 w-4" />
+        </button>
+
+        <div className="h-4 w-px bg-zinc-200 mx-1"></div>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('bulletList') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Bullet List"
+        >
+          <List className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('orderedList') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Numbered List"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('blockquote') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Blockquote"
+        >
+          <Quote className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={setLink}
+          className={`rounded p-1.5 hover:bg-zinc-200/80 transition ${
+            editor.isActive('link') ? 'bg-zinc-200 text-zinc-900 font-bold' : ''
+          }`}
+          title="Insert Link"
+        >
+          <LinkIcon className="h-4 w-4" />
+        </button>
+
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+
+        <button
+          type="button"
+          disabled={uploadingImage}
+          onClick={handleImageClick}
+          className="rounded p-1.5 hover:bg-zinc-200/80 transition flex items-center gap-1 disabled:opacity-50"
+          title="Upload Image"
+        >
+          {uploadingImage ? (
+            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+          ) : (
+            <ImageIcon className="h-4 w-4" />
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={addImageByUrl}
+          className="rounded p-1.5 hover:bg-zinc-200/80 transition"
+          title="Insert Image via URL"
+        >
+          <Globe className="h-4 w-4 text-zinc-500" />
+        </button>
+
+        <div className="h-4 w-px bg-zinc-200 mx-1"></div>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().undo()}
+          className="rounded p-1.5 hover:bg-zinc-200/80 transition disabled:opacity-30"
+          title="Undo"
+        >
+          <Undo className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().redo()}
+          className="rounded p-1.5 hover:bg-zinc-200/80 transition disabled:opacity-30"
+          title="Redo"
+        >
+          <Redo className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Right Toolbar Controls: Word count, Preview toggle, Zen mode */}
+      <div className="flex items-center gap-2">
+        <span className="hidden sm:inline-flex items-center font-mono text-[11px] text-zinc-400">
+          {wordCount} words · {readingMinutes} min read
+        </span>
+
+        <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('edit')}
+            className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-medium transition ${
+              activeTab === 'edit'
+                ? 'bg-zinc-900 text-white shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-900'
+            }`}
+          >
+            <Edit3 className="h-3 w-3" />
+            <span>Edit</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('preview')}
+            className={`inline-flex items-center gap-1 rounded px-2 py-0.5 font-medium transition ${
+              activeTab === 'preview'
+                ? 'bg-zinc-900 text-white shadow-xs'
+                : 'text-zinc-500 hover:text-zinc-900'
+            }`}
+          >
+            <Eye className="h-3 w-3" />
+            <span>Preview</span>
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsZenMode(!isZenMode)}
+          className={`rounded-lg border p-1.5 transition ${
+            isZenMode
+              ? 'border-zinc-900 bg-zinc-900 text-white'
+              : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'
+          }`}
+          title={isZenMode ? 'Exit Zen Mode (Esc)' : 'Zen Focus Mode (Cmd+Shift+F)'}
+        >
+          {isZenMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </button>
+      </div>
+    </div>
   )
+
+  const contentRenderer = activeTab === 'preview' ? (
+    <div className="prose max-w-none text-zinc-900 leading-relaxed font-serif text-lg py-4">
+      <div
+        dangerouslySetInnerHTML={{
+          __html: editor.getHTML() || '<p class="text-zinc-400 italic">No content to preview.</p>',
+        }}
+      />
+    </div>
+  ) : (
+    <EditorContent editor={editor} />
+  )
+
+  // Fullscreen Zen Mode Portal
+  if (isZenMode) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-white overflow-y-auto animate-in fade-in duration-200">
+        {floatingBubbleMenu}
+        {/* Floating Zen Header Bar */}
+        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-zinc-200/80 bg-white/90 px-6 py-3 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsZenMode(false)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition shadow-xs"
+            >
+              <Minimize2 className="h-3.5 w-3.5" />
+              <span>Exit Zen Mode</span>
+              <kbd className="rounded border border-zinc-300 bg-white px-1 font-mono text-[10px] text-zinc-500">
+                Esc
+              </kbd>
+            </button>
+            <span className="font-mono text-xs text-zinc-400">
+              {wordCount} words · {readingMinutes} min read
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveTab('edit')}
+                className={`inline-flex items-center gap-1 rounded px-2.5 py-1 font-medium transition ${
+                  activeTab === 'edit'
+                    ? 'bg-zinc-900 text-white shadow-xs'
+                    : 'text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                <Edit3 className="h-3 w-3" />
+                <span>Edit</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('preview')}
+                className={`inline-flex items-center gap-1 rounded px-2.5 py-1 font-medium transition ${
+                  activeTab === 'preview'
+                    ? 'bg-zinc-900 text-white shadow-xs'
+                    : 'text-zinc-500 hover:text-zinc-900'
+                }`}
+              >
+                <Eye className="h-3 w-3" />
+                <span>Preview</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Zen Writing Canvas */}
+        <div className="mx-auto max-w-3xl w-full px-6 py-12 flex-1">
+          {toolbarContent}
+          <div className="mt-6 min-h-[70vh] pb-32">
+            {contentRenderer}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (embedded) {
     return (
       <div className="w-full flex flex-col">
+        {floatingBubbleMenu}
         {toolbarContent}
         <div className="p-6 min-h-[460px]">
-          <EditorContent editor={editor} />
+          {contentRenderer}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200/90 bg-white shadow-sm overflow-hidden focus-within:border-zinc-300">
+    <div className="rounded-xl border border-zinc-200/90 bg-white shadow-xs overflow-hidden focus-within:border-zinc-300">
+      {floatingBubbleMenu}
       {toolbarContent}
       <div className="p-6 min-h-[420px]">
-        <EditorContent editor={editor} />
+        {contentRenderer}
       </div>
     </div>
   )
