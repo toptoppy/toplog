@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, PostListItem } from '@/lib/types'
+import BulkActionsBar from '@/components/posts/BulkActionsBar'
 import {
   Plus,
   Search,
@@ -30,6 +31,13 @@ export default function PostsListPage() {
   const [publicUrl, setPublicUrl] = useState('')
   const [runningScheduler, setRunningScheduler] = useState(false)
   const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null)
+
+  // Bulk Selection State
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false)
+  const [batchMessage, setBatchMessage] = useState<string | null>(null)
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number | null>(null)
+  const selectAllCheckboxRef = useRef<HTMLInputElement>(null)
 
   const fetchPosts = async () => {
     try {
@@ -84,6 +92,125 @@ export default function PostsListPage() {
       statusFilter === 'ALL' || p.variant?.status === statusFilter
     return matchesSearch && matchesStatus
   })
+
+  // Esc key clears selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedIds.length > 0) {
+        setSelectedIds([])
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedIds])
+
+  // Indeterminate state for Select All checkbox
+  useEffect(() => {
+    if (selectAllCheckboxRef.current) {
+      const isIndeterminate =
+        selectedIds.length > 0 && selectedIds.length < filteredPosts.length
+      selectAllCheckboxRef.current.indeterminate = isIndeterminate
+    }
+  }, [selectedIds, filteredPosts])
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.length === filteredPosts.length && filteredPosts.length > 0) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(filteredPosts.map((p) => p.id))
+    }
+  }
+
+  const handleToggleSelectOne = (
+    id: number,
+    index: number,
+    e: React.MouseEvent<HTMLInputElement>
+  ) => {
+    if (e.shiftKey && lastSelectedIndex !== null) {
+      const start = Math.min(lastSelectedIndex, index)
+      const end = Math.max(lastSelectedIndex, index)
+      const rangeIds = filteredPosts.slice(start, end + 1).map((p) => p.id)
+      setSelectedIds((prev) => Array.from(new Set([...prev, ...rangeIds])))
+    } else {
+      setSelectedIds((prev) =>
+        prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+      )
+    }
+    setLastSelectedIndex(index)
+  }
+
+  const handleBulkDelete = async () => {
+    if (
+      !confirm(
+        `Are you sure you want to delete ${selectedIds.length} posts? This cannot be undone.`
+      )
+    )
+      return
+    setIsBatchProcessing(true)
+    setBatchMessage(`Deleting ${selectedIds.length} posts...`)
+    try {
+      await Promise.allSettled(
+        selectedIds.map((id) => api.posts.delete(blogId, id))
+      )
+      setSelectedIds([])
+      await fetchPosts()
+    } catch (err: any) {
+      alert(err.message || 'Bulk delete failed')
+    } finally {
+      setIsBatchProcessing(false)
+      setBatchMessage(null)
+    }
+  }
+
+  const handleBulkStatusChange = async (status: 'PUBLISHED' | 'DRAFT') => {
+    setIsBatchProcessing(true)
+    setBatchMessage(`Setting ${selectedIds.length} posts to ${status}...`)
+    try {
+      const targetPosts = posts.filter(
+        (p) => selectedIds.includes(p.id) && p.variant
+      )
+      await Promise.allSettled(
+        targetPosts.map((p) =>
+          api.posts.updateVariant(blogId, p.id, p.variant.languageCode, {
+            title: p.variant.title,
+            slug: p.variant.slug,
+            description: p.variant.description,
+            contentJson: p.variant.contentJson,
+            contentHtml: p.variant.contentHtml,
+            status,
+          })
+        )
+      )
+      setSelectedIds([])
+      await fetchPosts()
+    } catch (err: any) {
+      alert(err.message || 'Bulk status update failed')
+    } finally {
+      setIsBatchProcessing(false)
+      setBatchMessage(null)
+    }
+  }
+
+  const handleBulkToggleFeatured = async (isFeatured: boolean) => {
+    setIsBatchProcessing(true)
+    setBatchMessage(
+      `${isFeatured ? 'Featuring' : 'Unfeaturing'} ${selectedIds.length} posts...`
+    )
+    try {
+      await Promise.allSettled(
+        selectedIds.map((id) =>
+          api.posts.updateBase(blogId, id, { isFeatured })
+        )
+      )
+      setSelectedIds([])
+      await fetchPosts()
+    } catch (err: any) {
+      alert(err.message || 'Bulk update failed')
+    } finally {
+      setIsBatchProcessing(false)
+      setBatchMessage(null)
+    }
+  }
 
   if (loading || !blog) {
     return (
@@ -236,7 +363,24 @@ export default function PostsListPage() {
             <table className="w-full text-left text-xs text-zinc-600">
               <thead className="bg-zinc-50/75 border-b border-zinc-100 text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500">
                 <tr>
-                  <th className="px-6 py-3">Title & Slug</th>
+                  <th className="w-10 px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      ref={selectAllCheckboxRef}
+                      checked={
+                        filteredPosts.length > 0 &&
+                        selectedIds.length === filteredPosts.length
+                      }
+                      onChange={handleToggleSelectAll}
+                      className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      title={
+                        selectedIds.length === filteredPosts.length
+                          ? 'Deselect all'
+                          : 'Select all visible posts'
+                      }
+                    />
+                  </th>
+                  <th className="px-4 py-3">Title & Slug</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Language</th>
                   <th className="px-4 py-3">Created</th>
@@ -244,7 +388,8 @@ export default function PostsListPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {filteredPosts.map((p) => {
+                {filteredPosts.map((p, index) => {
+                  const isSelected = selectedIds.includes(p.id)
                   const title = p.variant?.title || 'Untitled'
                   const slug = p.variant?.slug || ''
                   const status = p.variant?.status || 'DRAFT'
@@ -252,8 +397,24 @@ export default function PostsListPage() {
                   const livePostUrl = publicUrl ? `${publicUrl}/${slug}` : null
 
                   return (
-                    <tr key={p.id} className="hover:bg-zinc-50/80 transition group">
-                      <td className="px-6 py-4">
+                    <tr
+                      key={p.id}
+                      className={`hover:bg-zinc-50/80 transition group ${
+                        isSelected ? 'bg-blue-50/40 hover:bg-blue-50/60' : ''
+                      }`}
+                    >
+                      <td className="w-10 px-4 py-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onClick={(e) => handleToggleSelectOne(p.id, index, e)}
+                          onChange={() => {}} // Controlled by onClick to support Shift-click
+                          className="h-3.5 w-3.5 rounded border-zinc-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                          aria-label={`Select ${title}`}
+                        />
+                      </td>
+
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-2.5">
                           {p.isFeatured && (
                             <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500 shrink-0" />
@@ -356,6 +517,17 @@ export default function PostsListPage() {
           </div>
         )}
       </div>
+
+      {/* Floating Bulk Actions Bar */}
+      <BulkActionsBar
+        selectedCount={selectedIds.length}
+        isProcessing={isBatchProcessing}
+        processingMessage={batchMessage}
+        onClear={() => setSelectedIds([])}
+        onDelete={handleBulkDelete}
+        onStatusChange={handleBulkStatusChange}
+        onToggleFeatured={handleBulkToggleFeatured}
+      />
     </div>
   )
 }
