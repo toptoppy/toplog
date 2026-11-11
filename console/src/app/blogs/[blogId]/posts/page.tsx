@@ -240,6 +240,40 @@ export default function PostsListPage() {
     }
   }
 
+  const handleBulkExport = () => {
+    const selectedPosts = posts.filter((p) => selectedIds.includes(p.id))
+    for (const post of selectedPosts) {
+      if (!post.variant) continue
+      const postTags = post.tags?.map((t) => `"${t.name}"`).join(', ') || ''
+      const frontmatter = [
+        '---',
+        `title: "${(post.variant.title || '').replace(/"/g, '\\"')}"`,
+        `slug: "${post.variant.slug || ''}"`,
+        `language: "${post.variant.languageCode}"`,
+        `status: "${post.variant.status}"`,
+        `published_at: ${post.variant.publishedAt ? `"${post.variant.publishedAt}"` : 'null'}`,
+        post.variant.description ? `description: "${post.variant.description.replace(/"/g, '\\"')}"` : null,
+        post.featuredImageUrl ? `featured_image: "${post.featuredImageUrl}"` : null,
+        `tags: [${postTags}]`,
+        '---',
+        '',
+        post.variant.contentHtml || '',
+      ]
+        .filter((l) => l !== null)
+        .join('\n')
+
+      const blob = new Blob([frontmatter], { type: 'text/markdown;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${post.variant.slug || `post-${post.id}`}.md`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }
+  }
+
   if (loading || !blog) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -603,6 +637,7 @@ export default function PostsListPage() {
         onStatusChange={handleBulkStatusChange}
         onToggleFeatured={handleBulkToggleFeatured}
         onDuplicate={handleBulkDuplicate}
+        onExport={handleBulkExport}
       />
     </div>
   )

@@ -27,6 +27,51 @@ export default function NewPostPage() {
   const [error, setError] = useState('')
   const [wordCount, setWordCount] = useState(0)
   const [readingMinutes, setReadingMinutes] = useState(1)
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false)
+
+  // Restore Draft from Local Storage on Mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`toplog_new_draft_${blogId}`)
+      if (raw) {
+        const d = JSON.parse(raw)
+        if (d.title || d.contentHtml) {
+          setTitle(d.title || '')
+          setSlug(d.slug || '')
+          setDescription(d.description || '')
+          setContentHtml(d.contentHtml || '')
+          setContentJson(d.contentJson || '{}')
+          setHasRestoredDraft(true)
+        }
+      }
+    } catch {}
+  }, [blogId])
+
+  // Auto-Save Draft to Local Storage (debounced)
+  useEffect(() => {
+    if (!title && !contentHtml) return
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          `toplog_new_draft_${blogId}`,
+          JSON.stringify({ title, slug, description, contentHtml, contentJson })
+        )
+      } catch {}
+    }, 1500)
+    return () => clearTimeout(timer)
+  }, [blogId, title, slug, description, contentHtml, contentJson])
+
+  const discardRestoredDraft = () => {
+    try {
+      localStorage.removeItem(`toplog_new_draft_${blogId}`)
+    } catch {}
+    setTitle('')
+    setSlug('')
+    setDescription('')
+    setContentHtml('')
+    setContentJson('{}')
+    setHasRestoredDraft(false)
+  }
 
   // Keyboard Shortcuts: Cmd+S / Ctrl+S to save draft
   useEffect(() => {
@@ -86,6 +131,9 @@ export default function NewPostPage() {
         featuredImageUrl: featuredImageUrl || undefined,
         status,
       })
+      try {
+        localStorage.removeItem(`toplog_new_draft_${blogId}`)
+      } catch {}
       router.push(`/blogs/${blogId}/posts/${created.id}`)
     } catch (err: any) {
       setError(err.message || 'Failed to save post')
@@ -132,6 +180,22 @@ export default function NewPostPage() {
           </button>
         </div>
       </div>
+
+      {hasRestoredDraft && (
+        <div className="rounded-xl bg-amber-50 border border-amber-200/80 p-3.5 flex items-center justify-between text-xs text-amber-800 animate-in fade-in">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span>Restored unsaved draft from local storage.</span>
+          </div>
+          <button
+            type="button"
+            onClick={discardRestoredDraft}
+            className="text-[11px] font-semibold text-amber-900 underline hover:text-amber-950"
+          >
+            Discard Draft
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg bg-red-50 p-3.5 text-xs font-mono text-red-600 border border-red-200">

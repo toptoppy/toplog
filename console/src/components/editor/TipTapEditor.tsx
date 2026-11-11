@@ -36,6 +36,7 @@ import {
   Trash2,
   Target,
   Check,
+  Compass,
 } from 'lucide-react'
 
 interface TipTapEditorProps {
@@ -105,6 +106,37 @@ export default function TipTapEditor({
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [showGoalMenu])
+
+  // Document Outline / TOC State
+  const [showOutlineMenu, setShowOutlineMenu] = useState(false)
+  const outlineMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (outlineMenuRef.current && !outlineMenuRef.current.contains(e.target as Node)) {
+        setShowOutlineMenu(false)
+      }
+    }
+    if (showOutlineMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showOutlineMenu])
+
+  const getHeadings = () => {
+    if (!editor) return []
+    const headings: { level: number; text: string; pos: number }[] = []
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'heading') {
+        headings.push({
+          level: node.attrs.level,
+          text: node.textContent.trim() || 'Untitled Section',
+          pos,
+        })
+      }
+    })
+    return headings
+  }
 
   // Floating Bubble Menu State
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null)
@@ -803,6 +835,61 @@ export default function TipTapEditor({
                 >
                   Set
                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Document Outline / Table of Contents Menu */}
+        <div className="relative" ref={outlineMenuRef}>
+          <button
+            type="button"
+            onClick={() => setShowOutlineMenu(!showOutlineMenu)}
+            className="hidden sm:inline-flex items-center gap-1 text-zinc-500 hover:text-zinc-800 p-1.5 rounded-lg border border-transparent hover:border-zinc-200 hover:bg-zinc-100 transition"
+            title="Document Outline & Table of Contents"
+          >
+            <Compass className="h-3.5 w-3.5" />
+          </button>
+
+          {showOutlineMenu && (
+            <div className="absolute right-0 top-full mt-1.5 z-50 w-72 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg animate-in fade-in zoom-in-95 max-h-80 overflow-y-auto">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                  <Compass className="h-3.5 w-3.5 text-indigo-600" />
+                  Document Outline
+                </span>
+                <span className="text-[10px] font-mono text-zinc-400">
+                  {getHeadings().length} section{getHeadings().length === 1 ? '' : 's'}
+                </span>
+              </div>
+
+              <div className="py-2 space-y-1">
+                {getHeadings().length === 0 ? (
+                  <p className="text-[11px] text-zinc-400 py-3 text-center italic">
+                    No headings found yet. Use H1 or H2 to structure your article.
+                  </p>
+                ) : (
+                  getHeadings().map((h, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => {
+                        editor?.commands.setTextSelection(h.pos)
+                        editor?.commands.scrollIntoView()
+                        setShowOutlineMenu(false)
+                      }}
+                      className="w-full text-left rounded-md px-2 py-1 text-xs hover:bg-zinc-100 transition flex items-center gap-2 group"
+                      style={{ paddingLeft: `${(h.level - 1) * 12 + 8}px` }}
+                    >
+                      <span className="text-[9px] font-mono uppercase px-1 py-0.5 rounded bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200 shrink-0">
+                        H{h.level}
+                      </span>
+                      <span className="truncate text-zinc-700 group-hover:text-zinc-900">
+                        {h.text}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             </div>
           )}

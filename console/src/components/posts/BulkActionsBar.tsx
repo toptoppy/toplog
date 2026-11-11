@@ -11,6 +11,7 @@ import {
   StarOff,
   Loader2,
   Copy,
+  FileDown,
 } from 'lucide-react'
 
 export interface BulkActionsBarProps {
@@ -22,6 +23,7 @@ export interface BulkActionsBarProps {
   onStatusChange: (status: 'PUBLISHED' | 'DRAFT') => void
   onToggleFeatured?: (featured: boolean) => void
   onDuplicate?: () => void
+  onExport?: () => void
 }
 
 export default function BulkActionsBar({
@@ -33,6 +35,7 @@ export default function BulkActionsBar({
   onStatusChange,
   onToggleFeatured,
   onDuplicate,
+  onExport,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) return null
 
@@ -98,6 +101,18 @@ export default function BulkActionsBar({
                 >
                   <Copy className="h-3.5 w-3.5 text-blue-400" />
                   <span className="hidden sm:inline">Duplicate</span>
+                </button>
+              )}
+
+              {onExport && (
+                <button
+                  type="button"
+                  onClick={onExport}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-purple-900/50 bg-purple-950/40 px-2.5 py-1.5 text-xs font-medium text-purple-300 hover:bg-purple-900/60 hover:text-purple-200 transition"
+                  title="Export selected posts as Markdown"
+                >
+                  <FileDown className="h-3.5 w-3.5 text-purple-400" />
+                  <span className="hidden sm:inline">Export</span>
                 </button>
               )}
 

@@ -35,6 +35,7 @@ import {
   ArrowRight,
   Command,
   CheckSquare,
+  FileDown,
 } from 'lucide-react'
 
 export default function PostStudioPage() {
@@ -102,10 +103,36 @@ export default function PostStudioPage() {
   // Auto-Save & Writing Metrics State
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'unsaved' | 'saving' | 'saved' | 'error'>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+  const [savedTimeAgo, setSavedTimeAgo] = useState<string>('')
   const [wordCount, setWordCount] = useState(0)
   const [readingMinutes, setReadingMinutes] = useState(1)
   const [showShortcutsModal, setShowShortcutsModal] = useState(false)
   const [showChecklistPopover, setShowChecklistPopover] = useState(false)
+
+  // Live Relative Time Elapsed Ticker (every 5 seconds)
+  useEffect(() => {
+    const updateAgo = () => {
+      if (!lastSavedAt) {
+        setSavedTimeAgo('')
+        return
+      }
+      const diffSeconds = Math.floor((Date.now() - lastSavedAt.getTime()) / 1000)
+      if (diffSeconds < 10) {
+        setSavedTimeAgo('just now')
+      } else if (diffSeconds < 60) {
+        setSavedTimeAgo(`${diffSeconds}s ago`)
+      } else if (diffSeconds < 3600) {
+        const mins = Math.floor(diffSeconds / 60)
+        setSavedTimeAgo(`${mins}m ago`)
+      } else {
+        setSavedTimeAgo(lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+      }
+    }
+
+    updateAgo()
+    const interval = setInterval(updateAgo, 5000)
+    return () => clearInterval(interval)
+  }, [lastSavedAt])
 
   const isInitialMountRef = useRef(true)
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -268,6 +295,36 @@ export default function PostStudioPage() {
     } finally {
       setRestoringRevision(false)
     }
+  }
+
+  const handleExportMarkdown = () => {
+    const postTags = post?.tags?.map((t) => `"${t.name}"`).join(', ') || ''
+    const frontmatter = [
+      '---',
+      `title: "${(title || '').replace(/"/g, '\\"')}"`,
+      `slug: "${slug || ''}"`,
+      `language: "${activeLang}"`,
+      `status: "${status}"`,
+      `published_at: ${publishedAt ? `"${publishedAt}"` : 'null'}`,
+      description ? `description: "${description.replace(/"/g, '\\"')}"` : null,
+      featuredImageUrl ? `featured_image: "${featuredImageUrl}"` : null,
+      `tags: [${postTags}]`,
+      '---',
+      '',
+      contentHtml || '',
+    ]
+      .filter((line) => line !== null)
+      .join('\n')
+
+    const blob = new Blob([frontmatter], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${slug || 'article'}.md`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
 
   const handleSaveVariant = async (overrideStatus?: PostStatus, overrideScheduledAt?: string) => {
@@ -520,10 +577,8 @@ export default function PostStudioPage() {
               ) : autoSaveStatus === 'saved' ? (
                 <>
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  <span className="text-zinc-600">
-                    {lastSavedAt
-                      ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                      : 'Saved'}
+                  <span className="text-zinc-600 font-medium" title={lastSavedAt ? `Saved at ${lastSavedAt.toLocaleTimeString()}` : 'Saved'}>
+                    Saved {savedTimeAgo || 'just now'}
                   </span>
                 </>
               ) : autoSaveStatus === 'unsaved' ? (
@@ -598,6 +653,16 @@ export default function PostStudioPage() {
           >
             <History className="h-3.5 w-3.5 text-zinc-400" />
             <span>History</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportMarkdown}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition shadow-sm"
+            title="Export this post as Markdown (.md) with YAML frontmatter"
+          >
+            <FileDown className="h-3.5 w-3.5 text-zinc-400" />
+            <span>Export .md</span>
           </button>
 
           <button

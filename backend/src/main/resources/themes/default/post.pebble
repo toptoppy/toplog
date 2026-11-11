@@ -50,7 +50,10 @@
 
     <!-- Auto-Generated Table of Contents -->
     <aside class="post-toc" id="post-toc" style="display: none;">
-        <h3>Table of Contents</h3>
+        <div class="toc-header">
+            <h3>Table of Contents</h3>
+            <button type="button" id="toc-toggle-btn" class="toc-toggle" title="Toggle Table of Contents">Hide</button>
+        </div>
         <ul id="toc-list"></ul>
     </aside>
 
@@ -249,15 +252,17 @@
         });
     }
 
-    // --- Auto-generate Table of Contents ---
+    // --- Auto-generate Table of Contents with Active Highlighting & Collapse ---
     try {
         var body = document.getElementById('post-article-body');
         var tocContainer = document.getElementById('post-toc');
         var tocList = document.getElementById('toc-list');
+        var tocToggleBtn = document.getElementById('toc-toggle-btn');
 
         if (body && tocContainer && tocList) {
             var headings = body.querySelectorAll('h2, h3');
             if (headings.length >= 2) {
+                var tocLinks = [];
                 headings.forEach(function(h, idx) {
                     if (!h.id) {
                         h.id = 'heading-' + idx + '-' + h.innerText.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -271,8 +276,52 @@
                     a.innerText = h.innerText;
                     li.appendChild(a);
                     tocList.appendChild(li);
+                    tocLinks.push({ heading: h, link: a });
                 });
                 tocContainer.style.display = 'block';
+
+                // Smooth scroll when clicking TOC link
+                tocList.addEventListener('click', function(e) {
+                    var target = e.target.closest('a');
+                    if (target && target.hash) {
+                        var targetEl = document.querySelector(target.hash);
+                        if (targetEl) {
+                            e.preventDefault();
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            history.pushState(null, null, target.hash);
+                        }
+                    }
+                });
+
+                // Toggle collapse / expand
+                if (tocToggleBtn) {
+                    tocToggleBtn.addEventListener('click', function() {
+                        if (tocList.style.display === 'none') {
+                            tocList.style.display = 'block';
+                            tocToggleBtn.innerText = 'Hide';
+                        } else {
+                            tocList.style.display = 'none';
+                            tocToggleBtn.innerText = 'Show';
+                        }
+                    });
+                }
+
+                // IntersectionObserver for active heading highlight
+                if ('IntersectionObserver' in window && tocLinks.length > 0) {
+                    var observer = new IntersectionObserver(function(entries) {
+                        entries.forEach(function(entry) {
+                            if (entry.isIntersecting) {
+                                var matched = tocLinks.find(function(item) { return item.heading === entry.target; });
+                                if (matched) {
+                                    tocLinks.forEach(function(item) { item.link.classList.remove('active'); });
+                                    matched.link.classList.add('active');
+                                }
+                            }
+                        });
+                    }, { rootMargin: '0px 0px -70% 0px', threshold: 0.1 });
+
+                    headings.forEach(function(h) { observer.observe(h); });
+                }
             }
         }
     } catch (e) {}

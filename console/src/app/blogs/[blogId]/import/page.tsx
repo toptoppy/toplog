@@ -16,6 +16,7 @@ import {
   FileArchive,
   Info,
   Loader2,
+  FileDown,
 } from 'lucide-react'
 
 export default function ImportPage() {
@@ -26,8 +27,21 @@ export default function ImportPage() {
   const [activeType, setActiveType] = useState<'wordpress' | 'markdown'>('wordpress')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [importing, setImporting] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
   const [error, setError] = useState('')
+
+  const handleExport = async () => {
+    setExporting(true)
+    setError('')
+    try {
+      await api.exportArchive(blogId, `blog-${blogId}`)
+    } catch (err: any) {
+      setError(err.message || 'Export failed')
+    } finally {
+      setExporting(false)
+    }
+  }
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -229,6 +243,41 @@ export default function ImportPage() {
               <>
                 <FileUp className="h-4 w-4" />
                 Start Import
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Export Blog Archive Section */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 shrink-0">
+              <FileDown className="h-5 w-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Export Blog Archive</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Download a complete .zip archive containing all your posts (as Markdown with YAML frontmatter), tags, comments, and subscribers.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exporting}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-slate-800 disabled:opacity-50 transition shrink-0"
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Exporting...</span>
+              </>
+            ) : (
+              <>
+                <FileDown className="h-4 w-4" />
+                <span>Download Archive (.zip)</span>
               </>
             )}
           </button>
