@@ -16,6 +16,8 @@ import kotlinx.coroutines.launch
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
+import java.net.URI
 import java.security.SecureRandom
 import java.time.Instant
 import java.util.*
@@ -23,7 +25,7 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 import kotlin.system.measureTimeMillis
 
-class WebhookService {
+class WebhookService(private val allowLocalhost: Boolean = true) {
     private val logger = LoggerFactory.getLogger(WebhookService::class.java)
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -31,6 +33,59 @@ class WebhookService {
         engine {
             requestTimeout = 10000 // 10 seconds
         }
+    }
+
+    /**
+     * SSRF Protection: Validates that webhook URLs use http/https and do not target
+     * forbidden internal endpoints or cloud metadata services (e.g. 169.254.169.254).
+     */
+    fun validateWebhookUrl(rawUrl: String): String {
+        val trimmed = rawUrl.trim()
+        val uri = try {
+            URI(trimmed)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid webhook URL format: ${e.message}")
+        }
+
+        val scheme = uri.scheme?.lowercase()
+        require(scheme == "http" || scheme == "https") {
+            "Webhook URL must use http or https scheme"
+        }
+
+        val host = uri.host ?: throw IllegalArgumentException("Webhook URL missing host")
+
+        val addresses = try {
+            InetAddress.getAllByName(host)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Cannot resolve webhook host: $host")
+        }
+
+        for (addr in addresses) {
+            val ip = addr.hostAddress
+
+            // Link-local / Cloud metadata: 169.254.0.0/16 (AWS, GCP, Azure, DigitalOcean)
+            if (addr.isLinkLocalAddress || ip.startsWith("169.254.")) {
+                throw IllegalArgumentException("Webhook URL targets forbidden link-local or cloud metadata address")
+            }
+
+            // Loopback addresses: 127.0.0.0/8, ::1, localhost
+            if (addr.isLoopbackAddress || ip == "127.0.0.1" || host.equals("localhost", ignoreCase = true)) {
+                if (!allowLocalhost) {
+                    throw IllegalArgumentException("Webhook URL cannot target loopback address in production")
+                }
+            }
+
+            // Site-local / RFC 1918 Private networks (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16)
+            if (addr.isSiteLocalAddress && !allowLocalhost) {
+                throw IllegalArgumentException("Webhook URL cannot target private network address in production")
+            }
+
+            if (addr.isMulticastAddress || addr.isAnyLocalAddress) {
+                throw IllegalArgumentException("Webhook URL cannot target multicast or wildcard address")
+            }
+        }
+
+        return trimmed
     }
 
     private fun generateSecret(): String {
@@ -91,13 +146,14 @@ class WebhookService {
     }
 
     suspend fun createWebhook(blogId: Long, req: CreateWebhookRequest): WebhookResponseDto = dbQuery {
+        val safeUrl = validateWebhookUrl(req.url)
         val secret = if (!req.secret.isNullOrBlank()) req.secret else generateSecret()
         val eventsJoined = req.events.joinToString(",")
         val now = Instant.now()
 
         val id = Webhooks.insertAndGetId {
             it[Webhooks.blogId] = blogId
-            it[url] = req.url.trim()
+            it[url] = safeUrl
             it[Webhooks.secret] = secret
             it[events] = eventsJoined
             it[isActive] = req.isActive
@@ -108,7 +164,7 @@ class WebhookService {
         WebhookResponseDto(
             id = id,
             blogId = blogId,
-            url = req.url.trim(),
+            url = safeUrl,
             secret = secret,
             events = req.events,
             isActive = req.isActive,
@@ -118,6 +174,7 @@ class WebhookService {
     }
 
     suspend fun updateWebhook(blogId: Long, webhookId: Long, req: UpdateWebhookRequest): WebhookResponseDto? = dbQuery {
+        val safeUrl = validateWebhookUrl(req.url)
         val existing = Webhooks.selectAll()
             .where { (Webhooks.blogId eq blogId) and (Webhooks.id eq webhookId) }
             .singleOrNull() ?: return@dbQuery null
@@ -127,7 +184,7 @@ class WebhookService {
         val now = Instant.now()
 
         Webhooks.update({ (Webhooks.blogId eq blogId) and (Webhooks.id eq webhookId) }) {
-            it[url] = req.url.trim()
+            it[url] = safeUrl
             it[Webhooks.secret] = secret
             it[events] = eventsJoined
             it[isActive] = req.isActive
@@ -137,7 +194,7 @@ class WebhookService {
         WebhookResponseDto(
             id = webhookId,
             blogId = blogId,
-            url = req.url.trim(),
+            url = safeUrl,
             secret = secret,
             events = req.events,
             isActive = req.isActive,
@@ -186,7 +243,8 @@ class WebhookService {
 
         val duration = measureTimeMillis {
             try {
-                val response = httpClient.post(webhook.url) {
+                val safeUrl = validateWebhookUrl(webhook.url)
+                val response = httpClient.post(safeUrl) {
                     contentType(ContentType.Application.Json)
                     header("User-Agent", "Blogs-Webhook/1.0")
                     header("X-Webhook-Event", "test.ping")
@@ -251,7 +309,8 @@ class WebhookService {
 
                     val duration = measureTimeMillis {
                         try {
-                            val response = httpClient.post(url) {
+                            val safeUrl = validateWebhookUrl(url)
+                            val response = httpClient.post(safeUrl) {
                                 contentType(ContentType.Application.Json)
                                 header("User-Agent", "Blogs-Webhook/1.0")
                                 header("X-Webhook-Event", event)

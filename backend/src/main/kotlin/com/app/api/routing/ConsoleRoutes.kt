@@ -66,6 +66,9 @@ fun Route.consoleRoutes(
         val filename = call.parameters["filename"] ?: return@get call.respond(HttpStatusCode.BadRequest)
         val file = storageService.getFile(filename) ?: return@get call.respond(HttpStatusCode.NotFound)
         call.response.header("X-Content-Type-Options", "nosniff")
+        if (file.extension.equals("svg", ignoreCase = true)) {
+            call.response.header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")
+        }
         call.respondFile(file)
     }
 

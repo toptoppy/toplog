@@ -42,10 +42,11 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
     }
 
     // 2. Services
+    val isProd = System.getenv("KTOR_ENV")?.equals("production", ignoreCase = true) == true
     val jwtService = JwtService(config)
     val authService = AuthService(jwtService)
     val blogService = BlogService()
-    val webhookService = WebhookService()
+    val webhookService = WebhookService(allowLocalhost = !isProd)
     val revisionService = RevisionService()
     val postService = PostService(webhookService, revisionService)
     val exportService = ExportService(blogService, postService)
@@ -98,6 +99,14 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
         allowMethod(HttpMethod.Put)
         allowMethod(HttpMethod.Patch)
         allowMethod(HttpMethod.Delete)
+    }
+
+    // Defense-in-depth: Global Security Headers
+    intercept(ApplicationCallPipeline.Plugins) {
+        call.response.header("X-Content-Type-Options", "nosniff")
+        call.response.header("X-Frame-Options", "SAMEORIGIN")
+        call.response.header("Referrer-Policy", "strict-origin-when-cross-origin")
+        call.response.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
     }
 
     install(CallLogging) {

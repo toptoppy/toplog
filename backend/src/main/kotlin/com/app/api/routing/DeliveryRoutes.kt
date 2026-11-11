@@ -10,12 +10,17 @@ import com.app.api.dto.RecordPageViewRequest
 import com.app.api.dto.SearchResponseDto
 import com.app.config.AppConfig
 import com.app.domain.model.Blog
+import com.app.infrastructure.security.RateLimiter
+import com.app.infrastructure.security.checkRateLimit
 import com.app.service.*
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+
+val commentsRateLimiter = RateLimiter(maxRequests = 50, windowMs = 60_000L)
+val subscribeRateLimiter = RateLimiter(maxRequests = 50, windowMs = 60_000L)
 
 fun Route.deliveryRoutes(
     blogService: BlogService,
@@ -138,8 +143,9 @@ fun Route.deliveryRoutes(
         call.response.header(HttpHeaders.CacheControl, "public, max-age=86400")
         call.respondText(svg, ContentType("image", "svg+xml"))
     }
-    // Public API: Reader Comments Submission
+    // Public API: Reader Comments Submission (Rate Limited)
     post("/api/comments") {
+        if (!call.checkRateLimit(commentsRateLimiter)) return@post
         val blog = resolveBlog(call)
             ?: return@post call.respond(HttpStatusCode.NotFound, mapOf("error" to "Blog not found"))
 
@@ -224,8 +230,9 @@ fun Route.deliveryRoutes(
         call.respond(HttpStatusCode.OK, tags)
     }
 
-    // Public API: Member Newsletter Subscribe Endpoint
+    // Public API: Member Newsletter Subscribe Endpoint (Rate Limited)
     post("/api/subscribe") {
+        if (!call.checkRateLimit(subscribeRateLimiter)) return@post
         val blog = resolveBlog(call)
             ?: return@post call.respond(HttpStatusCode.NotFound, "Blog not found")
 

@@ -133,8 +133,8 @@
                     <div class="comment-card" id="comment-{{ comment.id }}">
                         <div class="comment-header">
                             <span class="comment-author">
-                                {% if comment.authorWebsite %}
-                                    <a href="{{ comment.authorWebsite }}" target="_blank" rel="nofollow noopener">{{ comment.authorName }}</a>
+                                {% if comment.authorWebsite and (comment.authorWebsite.startsWith('http://') or comment.authorWebsite.startsWith('https://')) %}
+                                    <a href="{{ comment.authorWebsite }}" target="_blank" rel="nofollow noopener noreferrer">{{ comment.authorName }}</a>
                                 {% else %}
                                     {{ comment.authorName }}
                                 {% endif %}

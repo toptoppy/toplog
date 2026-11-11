@@ -13,11 +13,12 @@ import org.jetbrains.exposed.sql.selectAll
 import java.time.Instant
 
 class AuthService(private val jwtService: JwtService) {
+    private val emailRegex = Regex("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")
 
     suspend fun register(request: RegisterRequest): AuthResponse {
         val email = request.email.trim().lowercase()
-        require(email.isNotBlank()) { "Email cannot be blank" }
-        require(request.password.length >= 6) { "Password must be at least 6 characters" }
+        require(email.isNotBlank() && emailRegex.matches(email)) { "Invalid email address format" }
+        require(request.password.length in 8..128) { "Password must be between 8 and 128 characters" }
 
         val existing = dbQuery {
             Users.selectAll().where { Users.email eq email }.firstOrNull()

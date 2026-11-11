@@ -13,6 +13,25 @@ class CommentService(
 ) {
     private val logger = LoggerFactory.getLogger(CommentService::class.java)
 
+    companion object {
+        /**
+         * Sanitizes comment author website URLs to prevent Stored XSS via javascript: or data: pseudo-protocols.
+         * Only http:// and https:// URLs are allowed.
+         */
+        fun sanitizeUrl(rawUrl: String?): String? {
+            if (rawUrl.isNullOrBlank()) return null
+            val trimmed = rawUrl.trim()
+            val lower = trimmed.lowercase()
+            if (!lower.startsWith("http://") && !lower.startsWith("https://")) {
+                return null
+            }
+            if (lower.contains("javascript:") || lower.contains("data:") || lower.contains("vbscript:")) {
+                return null
+            }
+            return trimmed.take(255)
+        }
+    }
+
     suspend fun createPublicComment(blogId: Long, request: PublicCreateCommentRequest): CommentDto {
         // Honeypot anti-spam protection
         val initialStatus = if (!request.honeypot.isNullOrBlank()) {
@@ -23,6 +42,7 @@ class CommentService(
             CommentStatus.PENDING
         }
 
+        val safeWebsite = sanitizeUrl(request.authorWebsite)
         val now = Instant.now()
         val commentId = dbQuery {
             Comments.insert {
@@ -31,7 +51,7 @@ class CommentService(
                 it[Comments.parentId] = request.parentId
                 it[Comments.authorName] = request.authorName.trim().take(100)
                 it[Comments.authorEmail] = request.authorEmail.trim().lowercase().take(255)
-                it[Comments.authorWebsite] = request.authorWebsite?.trim()?.take(255)
+                it[Comments.authorWebsite] = safeWebsite
                 it[Comments.content] = request.content.trim()
                 it[Comments.status] = initialStatus.name
                 it[Comments.createdAt] = now
