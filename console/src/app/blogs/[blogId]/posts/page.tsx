@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   FileEdit,
   Sparkles,
+  Copy,
 } from 'lucide-react'
 
 export default function PostsListPage() {
@@ -207,6 +208,32 @@ export default function PostsListPage() {
       await fetchPosts()
     } catch (err: any) {
       alert(err.message || 'Bulk update failed')
+    } finally {
+      setIsBatchProcessing(false)
+      setBatchMessage(null)
+    }
+  }
+
+  const handleDuplicateOne = async (id: number, title: string) => {
+    try {
+      await api.posts.duplicate(blogId, id)
+      await fetchPosts()
+    } catch (err: any) {
+      alert(err.message || `Failed to duplicate "${title}"`)
+    }
+  }
+
+  const handleBulkDuplicate = async () => {
+    setIsBatchProcessing(true)
+    setBatchMessage(`Duplicating ${selectedIds.length} posts...`)
+    try {
+      await Promise.allSettled(
+        selectedIds.map((id) => api.posts.duplicate(blogId, id))
+      )
+      setSelectedIds([])
+      await fetchPosts()
+    } catch (err: any) {
+      alert(err.message || 'Bulk duplicate failed')
     } finally {
       setIsBatchProcessing(false)
       setBatchMessage(null)
@@ -436,14 +463,26 @@ export default function PostsListPage() {
                             </div>
                             {p.tags && p.tags.length > 0 && (
                               <div className="flex flex-wrap gap-1 mt-1.5">
-                                {p.tags.map((t) => (
-                                  <span
-                                    key={t.id}
-                                    className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-zinc-100 text-zinc-600 border border-zinc-200/60"
-                                  >
-                                    #{t.name}
-                                  </span>
-                                ))}
+                                {p.tags.map((t) => {
+                                  const tagColor = t.color || '#64748B'
+                                  return (
+                                    <span
+                                      key={t.id}
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium"
+                                      style={{
+                                        backgroundColor: `${tagColor}15`,
+                                        color: tagColor,
+                                        border: `1px solid ${tagColor}40`,
+                                      }}
+                                    >
+                                      <span
+                                        className="h-1 w-1 rounded-full"
+                                        style={{ backgroundColor: tagColor }}
+                                      />
+                                      #{t.name}
+                                    </span>
+                                  )
+                                })}
                               </div>
                             )}
                           </div>
@@ -529,6 +568,14 @@ export default function PostsListPage() {
                             <Edit3 className="h-3.5 w-3.5" />
                           </Link>
                           <button
+                            type="button"
+                            onClick={() => handleDuplicateOne(p.id, title)}
+                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition"
+                            title="Duplicate as Draft"
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </button>
+                          <button
                             onClick={() => handleDelete(p.id, title)}
                             className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 transition"
                             title="Delete Post"
@@ -555,6 +602,7 @@ export default function PostsListPage() {
         onDelete={handleBulkDelete}
         onStatusChange={handleBulkStatusChange}
         onToggleFeatured={handleBulkToggleFeatured}
+        onDuplicate={handleBulkDuplicate}
       />
     </div>
   )

@@ -73,6 +73,19 @@ export interface Tag {
   blogId: number
   name: string
   slug: string
+  color?: string | null
+}
+
+export interface CreateTagInput {
+  name: string
+  slug: string
+  color?: string | null
+}
+
+export interface UpdateTagInput {
+  name?: string
+  slug?: string
+  color?: string | null
 }
 
 export interface PostVariant {

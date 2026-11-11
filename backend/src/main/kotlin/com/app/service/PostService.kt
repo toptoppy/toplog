@@ -47,7 +47,8 @@ class PostService(
                             id = tagRow[Tags.id].value,
                             blogId = tagRow[Tags.blogId].value,
                             name = tagRow[Tags.name],
-                            slug = tagRow[Tags.slug]
+                            slug = tagRow[Tags.slug],
+                            color = tagRow[Tags.color]
                         )
                     }
 
@@ -244,7 +245,8 @@ class PostService(
                     id = tagRow[Tags.id].value,
                     blogId = tagRow[Tags.blogId].value,
                     name = tagRow[Tags.name],
-                    slug = tagRow[Tags.slug]
+                    slug = tagRow[Tags.slug],
+                    color = tagRow[Tags.color]
                 )
             }
 
@@ -298,7 +300,8 @@ class PostService(
                     id = tagRow[Tags.id].value,
                     blogId = tagRow[Tags.blogId].value,
                     name = tagRow[Tags.name],
-                    slug = tagRow[Tags.slug]
+                    slug = tagRow[Tags.slug],
+                    color = tagRow[Tags.color]
                 )
             }
 
@@ -352,7 +355,8 @@ class PostService(
                     id = it[Tags.id].value,
                     blogId = it[Tags.blogId].value,
                     name = it[Tags.name],
-                    slug = it[Tags.slug]
+                    slug = it[Tags.slug],
+                    color = it[Tags.color]
                 )
             }
 
@@ -563,6 +567,54 @@ class PostService(
             )
         }
         return deleted
+    }
+
+    suspend fun duplicatePost(postId: Long, blogId: Long): PostDto {
+        val original = getPostById(postId, blogId) ?: throw NoSuchElementException("Post not found")
+        val now = Instant.now()
+        val copySuffix = System.currentTimeMillis().toString().takeLast(4)
+
+        val newPostId = dbQuery {
+            val newPId = Posts.insert {
+                it[Posts.blogId] = blogId
+                it[Posts.isFeatured] = false
+                it[Posts.isPage] = original.isPage
+                it[Posts.featuredImageUrl] = original.featuredImageUrl
+                it[Posts.canonicalUrl] = original.canonicalUrl
+                it[Posts.createdAt] = now
+                it[Posts.updatedAt] = now
+            } get Posts.id
+
+            // Duplicate variants as DRAFT with -copy suffix
+            for (v in original.variants) {
+                val newSlug = "${v.slug}-copy-$copySuffix"
+                PostVariants.insert {
+                    it[PostVariants.postId] = newPId
+                    it[PostVariants.languageCode] = v.languageCode
+                    it[PostVariants.slug] = newSlug
+                    it[PostVariants.title] = "${v.title} (Copy)"
+                    it[PostVariants.description] = v.description
+                    it[PostVariants.contentJson] = v.contentJson
+                    it[PostVariants.contentHtml] = v.contentHtml
+                    it[PostVariants.status] = PostStatus.DRAFT.name
+                    it[PostVariants.publishedAt] = null
+                    it[PostVariants.scheduledAt] = null
+                    it[PostVariants.updatedAt] = now
+                }
+            }
+
+            // Duplicate tags
+            for (t in original.tags) {
+                PostTags.insert {
+                    it[PostTags.postId] = newPId
+                    it[PostTags.tagId] = t.id
+                }
+            }
+
+            newPId.value
+        }
+
+        return getPostById(newPostId, blogId)!!
     }
 
     private fun buildPostVariantPayload(

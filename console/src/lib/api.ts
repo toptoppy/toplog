@@ -6,6 +6,8 @@ import {
   Post,
   PostListItem,
   Tag,
+  CreateTagInput,
+  UpdateTagInput,
   UpdateBlogInput,
   UpdatePostBaseInput,
   UpdateVariantInput,
@@ -174,6 +176,10 @@ export const api = {
       request<void>(`/api/console/blogs/${blogId}/posts/${postId}`, {
         method: 'DELETE',
       }),
+    duplicate: (blogId: number, postId: number) =>
+      request<Post>(`/api/console/blogs/${blogId}/posts/${postId}/duplicate`, {
+        method: 'POST',
+      }),
     runScheduler: (blogId: number) =>
       request<{ publishedCount: number; message: string }>(
         `/api/console/blogs/${blogId}/posts/scheduler/run`,
@@ -185,9 +191,14 @@ export const api = {
 
   tags: {
     list: (blogId: number) => request<Tag[]>(`/api/console/blogs/${blogId}/tags`),
-    create: (blogId: number, data: { name: string; slug: string }) =>
+    create: (blogId: number, data: CreateTagInput) =>
       request<Tag>(`/api/console/blogs/${blogId}/tags`, {
         method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (blogId: number, tagId: number, data: UpdateTagInput) =>
+      request<Tag>(`/api/console/blogs/${blogId}/tags/${tagId}`, {
+        method: 'PUT',
         body: JSON.stringify(data),
       }),
     delete: (blogId: number, tagId: number) =>

@@ -34,6 +34,8 @@ import {
   AlignCenter,
   AlignRight,
   Trash2,
+  Target,
+  Check,
 } from 'lucide-react'
 
 interface TipTapEditorProps {
@@ -61,6 +63,48 @@ export default function TipTapEditor({
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit')
   const [wordCount, setWordCount] = useState(0)
   const [readingMinutes, setReadingMinutes] = useState(1)
+
+  // Word Count Goal State
+  const [wordGoal, setWordGoal] = useState<number>(0)
+  const [customGoalInput, setCustomGoalInput] = useState('')
+  const [showGoalMenu, setShowGoalMenu] = useState(false)
+  const goalMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    try {
+      const savedGoal = localStorage.getItem('toplog_word_goal')
+      if (savedGoal) {
+        setWordGoal(Number(savedGoal) || 0)
+      }
+    } catch {}
+  }, [])
+
+  const setAndSaveGoal = (target: number) => {
+    setWordGoal(target)
+    try {
+      if (target > 0) {
+        localStorage.setItem('toplog_word_goal', String(target))
+      } else {
+        localStorage.removeItem('toplog_word_goal')
+      }
+    } catch {}
+    setShowGoalMenu(false)
+  }
+
+  const percent = wordGoal > 0 ? Math.min(100, Math.round((wordCount / wordGoal) * 100)) : 0
+  const isGoalReached = wordGoal > 0 && wordCount >= wordGoal
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (goalMenuRef.current && !goalMenuRef.current.contains(e.target as Node)) {
+        setShowGoalMenu(false)
+      }
+    }
+    if (showGoalMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showGoalMenu])
 
   // Floating Bubble Menu State
   const [bubblePos, setBubblePos] = useState<{ top: number; left: number } | null>(null)
@@ -649,11 +693,120 @@ export default function TipTapEditor({
         </button>
       </div>
 
-      {/* Right Toolbar Controls: Word count, Preview toggle, Zen mode */}
+      {/* Right Toolbar Controls: Word count, Goal tracker, Preview toggle, Zen mode */}
       <div className="flex items-center gap-2">
-        <span className="hidden sm:inline-flex items-center font-mono text-[11px] text-zinc-400">
-          {wordCount} words · {readingMinutes} min read
-        </span>
+        <div className="relative" ref={goalMenuRef}>
+          <button
+            type="button"
+            onClick={() => setShowGoalMenu(!showGoalMenu)}
+            className={`hidden sm:inline-flex items-center gap-1.5 font-mono text-[11px] px-2 py-1 rounded-md border transition ${
+              wordGoal > 0
+                ? isGoalReached
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                  : 'border-indigo-200 bg-indigo-50/60 text-indigo-700'
+                : 'border-transparent text-zinc-500 hover:text-zinc-800 hover:bg-zinc-100'
+            }`}
+            title="Word count & writing goals"
+          >
+            {wordGoal > 0 ? (
+              <>
+                <div className="relative flex items-center justify-center h-3.5 w-3.5">
+                  <svg className="h-3.5 w-3.5 -rotate-90" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-200" />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      fill="none"
+                      stroke={isGoalReached ? '#10B981' : '#6366F1'}
+                      strokeWidth="2.5"
+                      strokeDasharray={50.26}
+                      strokeDashoffset={50.26 - (50.26 * Math.min(100, percent)) / 100}
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                  </svg>
+                </div>
+                <span>
+                  {wordCount}/{wordGoal} w ({percent}%)
+                </span>
+                {isGoalReached && <Check className="h-3 w-3 text-emerald-600" />}
+              </>
+            ) : (
+              <>
+                <Target className="h-3 w-3 text-zinc-400" />
+                <span>{wordCount} words · {readingMinutes} min</span>
+              </>
+            )}
+          </button>
+
+          {/* Goal Popover */}
+          {showGoalMenu && (
+            <div className="absolute right-0 top-full mt-1.5 z-50 w-64 rounded-xl border border-zinc-200 bg-white p-3 shadow-lg animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
+                <span className="text-xs font-semibold text-zinc-900 flex items-center gap-1.5">
+                  <Target className="h-3.5 w-3.5 text-indigo-600" />
+                  Writing Goal
+                </span>
+                {wordGoal > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setAndSaveGoal(0)}
+                    className="text-[10px] text-zinc-400 hover:text-red-600 font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="py-2.5">
+                <p className="text-[11px] text-zinc-500 mb-2">Preset targets:</p>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[300, 500, 1000, 1500, 2000, 3000].map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setAndSaveGoal(t)}
+                      className={`text-[11px] py-1 px-1.5 rounded border transition text-center font-mono ${
+                        wordGoal === t
+                          ? 'border-indigo-600 bg-indigo-50 font-bold text-indigo-900'
+                          : 'border-zinc-200 hover:bg-zinc-50 text-zinc-700'
+                      }`}
+                    >
+                      {t.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-zinc-100 flex items-center gap-1.5">
+                <input
+                  type="number"
+                  placeholder="Custom target"
+                  value={customGoalInput}
+                  onChange={(e) => setCustomGoalInput(e.target.value)}
+                  className="w-full text-xs rounded border border-zinc-200 px-2 py-1 font-mono focus:border-zinc-900 focus:outline-none"
+                  min="50"
+                  max="100000"
+                />
+                <button
+                  type="button"
+                  disabled={!customGoalInput || Number(customGoalInput) <= 0}
+                  onClick={() => {
+                    const n = Number(customGoalInput)
+                    if (n > 0) {
+                      setAndSaveGoal(n)
+                      setCustomGoalInput('')
+                    }
+                  }}
+                  className="rounded bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-zinc-800 disabled:opacity-40"
+                >
+                  Set
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center rounded-lg border border-zinc-200 bg-white p-0.5 text-xs">
           <button
@@ -748,9 +901,39 @@ export default function TipTapEditor({
                 Esc
               </kbd>
             </button>
-            <span className="font-mono text-xs text-zinc-400">
-              {wordCount} words · {readingMinutes} min read
-            </span>
+            {wordGoal > 0 ? (
+              <span className={`inline-flex items-center gap-1.5 font-mono text-xs px-2.5 py-1 rounded-md border ${
+                isGoalReached
+                  ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                  : 'border-indigo-200 bg-indigo-50/60 text-indigo-700'
+              }`}>
+                <div className="relative flex items-center justify-center h-3.5 w-3.5">
+                  <svg className="h-3.5 w-3.5 -rotate-90" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-zinc-200" />
+                    <circle
+                      cx="10"
+                      cy="10"
+                      r="8"
+                      fill="none"
+                      stroke={isGoalReached ? '#10B981' : '#6366F1'}
+                      strokeWidth="2.5"
+                      strokeDasharray={50.26}
+                      strokeDashoffset={50.26 - (50.26 * Math.min(100, percent)) / 100}
+                      strokeLinecap="round"
+                      className="transition-all duration-300"
+                    />
+                  </svg>
+                </div>
+                <span>
+                  {wordCount} / {wordGoal} words ({percent}%)
+                </span>
+                {isGoalReached && <Check className="h-3.5 w-3.5 text-emerald-600" />}
+              </span>
+            ) : (
+              <span className="font-mono text-xs text-zinc-400">
+                {wordCount} words · {readingMinutes} min read
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">

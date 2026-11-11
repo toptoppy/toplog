@@ -101,7 +101,8 @@ class DeliveryService(
                 .map {
                     mapOf(
                         "name" to it[Tags.name],
-                        "slug" to it[Tags.slug]
+                        "slug" to it[Tags.slug],
+                        "color" to it[Tags.color]
                     )
                 }
 
@@ -217,7 +218,8 @@ class DeliveryService(
             "blog" to blogToContext(blog),
             "tag" to mapOf(
                 "name" to tag[Tags.name],
-                "slug" to tag[Tags.slug]
+                "slug" to tag[Tags.slug],
+                "color" to tag[Tags.color]
             ),
             "posts" to posts,
             "tags" to allTags,

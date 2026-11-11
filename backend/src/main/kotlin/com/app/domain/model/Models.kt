@@ -108,7 +108,8 @@ data class Tag(
     val id: Long,
     val blogId: Long,
     val name: String,
-    val slug: String
+    val slug: String,
+    val color: String? = null
 )
 
 data class Media(

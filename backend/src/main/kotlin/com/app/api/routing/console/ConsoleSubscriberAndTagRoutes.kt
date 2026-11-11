@@ -2,6 +2,7 @@ package com.app.api.routing.console
 
 import com.app.api.dto.CreateSubscriberRequest
 import com.app.api.dto.CreateTagRequest
+import com.app.api.dto.UpdateTagRequest
 import com.app.service.NewsletterService
 import com.app.service.TagService
 import io.ktor.http.*
@@ -62,6 +63,18 @@ fun Route.consoleSubscriberAndTagRoutes(
             val request = call.receive<CreateTagRequest>()
             val tag = tagService.createTag(blogId, request)
             call.respond(HttpStatusCode.Created, tag)
+        }
+
+        put("/{tagId}") {
+            val blogId = call.parameters["blogId"]!!.toLong()
+            val tagId = call.parameters["tagId"]!!.toLong()
+            val request = call.receive<UpdateTagRequest>()
+            val updated = tagService.updateTag(blogId, tagId, request)
+            if (updated != null) {
+                call.respond(HttpStatusCode.OK, updated)
+            } else {
+                call.respond(HttpStatusCode.NotFound, mapOf("error" to "Tag not found"))
+            }
         }
 
         delete("/{tagId}") {

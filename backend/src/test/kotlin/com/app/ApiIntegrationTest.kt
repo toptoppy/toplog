@@ -326,5 +326,33 @@ class ApiIntegrationTest {
         val postDetailWithRelated = client.get("/api/public/posts/integration-test-post?subdomain=author-blog").body<PublicPostDetailDto>()
         assertEquals(1, postDetailWithRelated.relatedPosts.size)
         assertEquals("related-architecture-post", postDetailWithRelated.relatedPosts[0].slug)
+
+        // 16. Test Tag Creation with Color and Update
+        val createTagRes = client.post("/api/console/blogs/$blogId/tags") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreateTagRequest(name = "Kotlin", slug = "kotlin", color = "#7F52FF"))
+        }
+        assertEquals(HttpStatusCode.Created, createTagRes.status)
+        val createdTag = createTagRes.body<TagDto>()
+        assertEquals("#7F52FF", createdTag.color)
+
+        val updateTagRes = client.put("/api/console/blogs/$blogId/tags/${createdTag.id}") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(UpdateTagRequest(color = "#3B82F6"))
+        }
+        assertEquals(HttpStatusCode.OK, updateTagRes.status)
+        val updatedTag = updateTagRes.body<TagDto>()
+        assertEquals("#3B82F6", updatedTag.color)
+
+        // 17. Test Post Duplicate Endpoint (/api/console/blogs/{blogId}/posts/{postId}/duplicate)
+        val duplicateRes = client.post("/api/console/blogs/$blogId/posts/$postId/duplicate") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+        assertEquals(HttpStatusCode.Created, duplicateRes.status)
+        val duplicatedPost = duplicateRes.body<PostDto>()
+        assertTrue(duplicatedPost.variants.first().title.contains("(Copy)"))
+        assertEquals(PostStatus.DRAFT, duplicatedPost.variants.first().status)
     }
 }

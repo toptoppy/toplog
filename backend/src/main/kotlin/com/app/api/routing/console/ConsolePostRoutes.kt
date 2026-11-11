@@ -78,6 +78,13 @@ fun Route.consolePostRoutes(
                 }
             }
 
+            post("/duplicate") {
+                val blogId = call.parameters["blogId"]!!.toLong()
+                val postId = call.parameters["postId"]!!.toLong()
+                val duplicated = postService.duplicatePost(postId, blogId)
+                call.respond(HttpStatusCode.Created, duplicated)
+            }
+
             put("/variants/{languageCode}") {
                 val principal = call.principal<UserPrincipal>()!!
                 val blogId = call.parameters["blogId"]!!.toLong()

@@ -10,6 +10,7 @@ import {
   Star,
   StarOff,
   Loader2,
+  Copy,
 } from 'lucide-react'
 
 export interface BulkActionsBarProps {
@@ -20,6 +21,7 @@ export interface BulkActionsBarProps {
   onDelete: () => void
   onStatusChange: (status: 'PUBLISHED' | 'DRAFT') => void
   onToggleFeatured?: (featured: boolean) => void
+  onDuplicate?: () => void
 }
 
 export default function BulkActionsBar({
@@ -30,6 +32,7 @@ export default function BulkActionsBar({
   onDelete,
   onStatusChange,
   onToggleFeatured,
+  onDuplicate,
 }: BulkActionsBarProps) {
   if (selectedCount === 0) return null
 
@@ -83,6 +86,18 @@ export default function BulkActionsBar({
                 >
                   <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
                   <span className="hidden md:inline">Feature</span>
+                </button>
+              )}
+
+              {onDuplicate && (
+                <button
+                  type="button"
+                  onClick={onDuplicate}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-900/50 bg-blue-950/40 px-2.5 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-900/60 hover:text-blue-200 transition"
+                  title="Duplicate selected as draft"
+                >
+                  <Copy className="h-3.5 w-3.5 text-blue-400" />
+                  <span className="hidden sm:inline">Duplicate</span>
                 </button>
               )}
 

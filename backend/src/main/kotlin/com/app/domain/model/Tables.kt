@@ -67,6 +67,7 @@ object Tags : LongIdTable("tags") {
     val blogId = reference("blog_id", Blogs)
     val name = varchar("name", 100)
     val slug = varchar("slug", 100)
+    val color = varchar("color", 30).nullable()
 
     init {
         uniqueIndex(blogId, slug)
