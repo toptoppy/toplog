@@ -9,6 +9,7 @@ import {
   Star,
   Globe,
   Link as LinkIcon,
+  Calendar,
 } from 'lucide-react'
 
 interface PostSettingsDrawerProps {
@@ -38,6 +39,10 @@ interface PostSettingsDrawerProps {
   onOpenSeoPreview?: () => void
   canonicalUrl?: string
   setCanonicalUrl?: (url: string) => void
+  publishedAt?: string | null
+  setPublishedAt?: (val: string | null) => void
+  scheduledAt?: string | null
+  postStatus?: 'DRAFT' | 'PUBLISHED' | 'SCHEDULED'
 }
 
 export default function PostSettingsDrawer({
@@ -63,6 +68,10 @@ export default function PostSettingsDrawer({
   onOpenSeoPreview,
   canonicalUrl = '',
   setCanonicalUrl,
+  publishedAt,
+  setPublishedAt,
+  scheduledAt,
+  postStatus = 'DRAFT',
 }: PostSettingsDrawerProps) {
   if (!isOpen) return null
 
@@ -249,6 +258,52 @@ export default function PostSettingsDrawer({
                   </span>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Publication Date & Scheduling */}
+      {setPublishedAt && (
+        <div className="space-y-2 pt-3 border-t border-zinc-100">
+          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500 flex items-center justify-between">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              <span>Publish Date</span>
+            </span>
+            <span className="text-[10px] font-mono text-zinc-400">
+              {postStatus === 'SCHEDULED' ? 'Scheduled' : 'Backdating'}
+            </span>
+          </label>
+
+          {postStatus === 'SCHEDULED' && scheduledAt ? (
+            <div className="rounded-lg bg-purple-50 border border-purple-200 p-2 text-xs text-purple-900">
+              <div className="font-semibold">Scheduled for:</div>
+              <div className="font-mono text-[11px] text-purple-700 mt-0.5">
+                {new Date(scheduledAt).toLocaleString()}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <input
+                type="datetime-local"
+                value={
+                  publishedAt
+                    ? new Date(publishedAt).toISOString().slice(0, 16)
+                    : ''
+                }
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setPublishedAt(new Date(e.target.value).toISOString())
+                  } else {
+                    setPublishedAt(null)
+                  }
+                }}
+                className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-900 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              />
+              <p className="text-[10px] text-zinc-400 mt-1">
+                Customize publish date or backdate imported stories.
+              </p>
             </div>
           )}
         </div>

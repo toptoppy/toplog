@@ -16,7 +16,8 @@ data class RenderedView(
 class DeliveryService(
     private val pebbleRenderer: PebbleRenderer,
     private val commentService: CommentService? = null,
-    private val tagService: TagService? = null
+    private val tagService: TagService? = null,
+    private val postService: PostService? = null
 ) {
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
         .withZone(ZoneId.of("UTC"))
@@ -49,6 +50,9 @@ class DeliveryService(
                 .orderBy(PostVariants.publishedAt to SortOrder.DESC)
                 .map { row ->
                     val publishedAt = row[PostVariants.publishedAt]
+                    val contentHtml = row[PostVariants.contentHtml]
+                    val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+                    val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
                     mapOf(
                         "id" to row[Posts.id].value,
                         "title" to row[PostVariants.title],
@@ -57,7 +61,9 @@ class DeliveryService(
                         "isFeatured" to row[Posts.isFeatured],
                         "featuredImageUrl" to row[Posts.featuredImageUrl],
                         "publishedAt" to publishedAt?.let { isoFormatter.format(it) },
-                        "publishedAtFormatted" to publishedAt?.let { dateFormatter.format(it) }
+                        "publishedAtFormatted" to publishedAt?.let { dateFormatter.format(it) },
+                        "readingTimeMinutes" to readingTime,
+                        "wordCount" to wordCount
                     )
                 }
         }
@@ -125,11 +131,37 @@ class DeliveryService(
         val wordCount = content.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
         val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
 
+        val tagIds = dbQuery {
+            PostTags.selectAll()
+                .where { PostTags.postId eq postId }
+                .map { it[PostTags.tagId].value }
+        }
+
+        val relatedPosts = postService?.getRelatedPosts(
+            blogId = blog.id,
+            currentPostId = postId,
+            tagIds = tagIds,
+            limit = 3,
+            languageCode = languageCode
+        )?.map { rel ->
+            mapOf(
+                "id" to rel.id,
+                "title" to rel.title,
+                "slug" to rel.slug,
+                "description" to rel.description,
+                "featuredImageUrl" to rel.featuredImageUrl,
+                "publishedAtFormatted" to rel.publishedAtFormatted,
+                "readingTimeMinutes" to rel.readingTimeMinutes,
+                "tags" to rel.tags
+            )
+        } ?: emptyList()
+
         val context = mapOf(
             "blog" to blogToContext(blog),
             "post" to postData.first,
             "postId" to postId,
             "comments" to comments,
+            "relatedPosts" to relatedPosts,
             "readingTimeMinutes" to readingTime,
             "wordCount" to wordCount,
             "tags" to postData.second,
@@ -162,6 +194,9 @@ class DeliveryService(
                 .orderBy(PostVariants.publishedAt to SortOrder.DESC)
                 .map { row ->
                     val publishedAt = row[PostVariants.publishedAt]
+                    val contentHtml = row[PostVariants.contentHtml]
+                    val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+                    val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
                     mapOf(
                         "id" to row[Posts.id].value,
                         "title" to row[PostVariants.title],
@@ -169,7 +204,9 @@ class DeliveryService(
                         "description" to row[PostVariants.description],
                         "featuredImageUrl" to row[Posts.featuredImageUrl],
                         "publishedAt" to publishedAt?.let { isoFormatter.format(it) },
-                        "publishedAtFormatted" to publishedAt?.let { dateFormatter.format(it) }
+                        "publishedAtFormatted" to publishedAt?.let { dateFormatter.format(it) },
+                        "readingTimeMinutes" to readingTime,
+                        "wordCount" to wordCount
                     )
                 }
         }

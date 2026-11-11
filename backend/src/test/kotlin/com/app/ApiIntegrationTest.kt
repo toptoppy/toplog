@@ -301,5 +301,30 @@ class ApiIntegrationTest {
         assertEquals("Integration Test Post", postDetail.title)
         assertTrue(postDetail.contentHtml.contains("Integration test post content body"))
         assertEquals("https://external.dev/original-article", postDetail.canonicalUrl)
+        assertNotNull(postDetail.relatedPosts)
+
+        // 15. Create a second published post with backdated publishedAt
+        val backdatedTime = "2024-01-15T10:00:00Z"
+        val post2Res = client.post("/api/console/blogs/$blogId/posts") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreatePostRequest(
+                title = "Related Architecture Post",
+                slug = "related-architecture-post",
+                status = PostStatus.PUBLISHED,
+                publishedAt = backdatedTime,
+                contentHtml = "<p>Deep dive into microservices and event-driven architecture patterns.</p>"
+            ))
+        }
+        assertEquals(HttpStatusCode.Created, post2Res.status)
+        val post2 = post2Res.body<PostDto>()
+        assertEquals(backdatedTime, post2.variants.first().publishedAt)
+        assertTrue(post2.variants.first().wordCount > 0)
+        assertTrue(post2.variants.first().readingTimeMinutes >= 1)
+
+        // Verify postDetail now returns post2 in relatedPosts
+        val postDetailWithRelated = client.get("/api/public/posts/integration-test-post?subdomain=author-blog").body<PublicPostDetailDto>()
+        assertEquals(1, postDetailWithRelated.relatedPosts.size)
+        assertEquals("related-architecture-post", postDetailWithRelated.relatedPosts[0].slug)
     }
 }

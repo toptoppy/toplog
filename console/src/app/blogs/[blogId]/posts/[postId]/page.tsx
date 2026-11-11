@@ -86,8 +86,9 @@ export default function PostStudioPage() {
   const [newsletterSubject, setNewsletterSubject] = useState('')
   const [sendingNewsletter, setSendingNewsletter] = useState(false)
 
-  // Scheduling State
+  // Scheduling & Publishing Date State
   const [scheduledAt, setScheduledAt] = useState<string | null>(null)
+  const [publishedAt, setPublishedAt] = useState<string | null>(null)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [scheduleDateTime, setScheduleDateTime] = useState('')
 
@@ -164,6 +165,7 @@ export default function PostStudioPage() {
     setContentJson(variant.contentJson || '{}')
     setStatus(variant.status)
     setScheduledAt(variant.scheduledAt || null)
+    setPublishedAt(variant.publishedAt || null)
     setAutoSaveStatus('idle')
 
     setTimeout(() => {
@@ -192,6 +194,7 @@ export default function PostStudioPage() {
           contentJson,
           status,
           scheduledAt: status === 'SCHEDULED' ? (scheduledAt || undefined) : undefined,
+          publishedAt: publishedAt || undefined,
         })
         setAutoSaveStatus('saved')
         setLastSavedAt(new Date())
@@ -302,6 +305,7 @@ export default function PostStudioPage() {
         contentJson,
         status: nextStatus,
         scheduledAt: nextStatus === 'SCHEDULED' ? (nextScheduledAt || undefined) : undefined,
+        publishedAt: publishedAt || undefined,
       })
 
       setStatus(nextStatus)
@@ -849,6 +853,10 @@ export default function PostStudioPage() {
           onOpenSeoPreview={() => setShowSeoPreviewModal(true)}
           canonicalUrl={canonicalUrl}
           setCanonicalUrl={setCanonicalUrl}
+          publishedAt={publishedAt}
+          setPublishedAt={setPublishedAt}
+          scheduledAt={scheduledAt}
+          postStatus={status}
         />
       </div>
 

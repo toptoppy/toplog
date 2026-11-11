@@ -30,6 +30,9 @@
                     <h2><a href="/{{ post.slug }}">{{ post.title }}</a></h2>
                     <div class="post-meta">
                         <time datetime="{{ post.publishedAt }}">{{ post.publishedAtFormatted }}</time>
+                        {% if post.readingTimeMinutes %}
+                            <span class="reading-time">&bull; {{ post.readingTimeMinutes }} min read</span>
+                        {% endif %}
                     </div>
                     {% if post.description %}
                         <p class="post-excerpt">{{ post.description }}</p>

@@ -165,37 +165,108 @@ class PostService(
             .offset(offset)
             .map { row ->
                 val postId = row[Posts.id].value
-                val tags = (PostTags innerJoin Tags).selectAll()
-                    .where { PostTags.postId eq postId }
-                    .map { tagRow ->
-                        TagDto(
-                            id = tagRow[Tags.id].value,
-                            blogId = tagRow[Tags.blogId].value,
-                            name = tagRow[Tags.name],
-                            slug = tagRow[Tags.slug]
-                        )
+                rowToPublicPostListItem(row, postId)
+            }
+    }
+
+    suspend fun getRelatedPosts(
+        blogId: Long,
+        currentPostId: Long,
+        tagIds: List<Long> = emptyList(),
+        limit: Int = 3,
+        languageCode: String? = null
+    ): List<PublicPostListItemDto> = dbQuery {
+        val cleanLang = languageCode?.trim()?.lowercase()?.ifEmpty { null }
+        val results = mutableListOf<PublicPostListItemDto>()
+        val seenPostIds = mutableSetOf(currentPostId)
+
+        // 1. First attempt: match by shared tags
+        if (tagIds.isNotEmpty()) {
+            var query = (Posts innerJoin PostVariants innerJoin PostTags)
+                .selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (Posts.id neq currentPostId) and
+                    (Posts.isPage eq false) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name) and
+                    (PostTags.tagId inList tagIds)
+                }
+
+            if (cleanLang != null) {
+                query = query.andWhere { PostVariants.languageCode eq cleanLang }
+            }
+
+            query.orderBy(PostVariants.publishedAt to SortOrder.DESC)
+                .limit(limit * 3)
+                .forEach { row ->
+                    val pid = row[Posts.id].value
+                    if (pid !in seenPostIds && results.size < limit) {
+                        seenPostIds.add(pid)
+                        results.add(rowToPublicPostListItem(row, pid))
                     }
+                }
+        }
 
-                val publishedAt = row[PostVariants.publishedAt]
-                val contentHtml = row[PostVariants.contentHtml]
-                val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
-                val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
+        // 2. Second attempt: backfill with latest published posts from the same blog if fewer than limit
+        if (results.size < limit) {
+            var backfillQuery = (Posts innerJoin PostVariants)
+                .selectAll()
+                .where {
+                    (Posts.blogId eq blogId) and
+                    (Posts.id notInList seenPostIds) and
+                    (Posts.isPage eq false) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
 
-                PublicPostListItemDto(
-                    id = postId,
-                    slug = row[PostVariants.slug],
-                    title = row[PostVariants.title],
-                    description = row[PostVariants.description],
-                    isFeatured = row[Posts.isFeatured],
-                    isPage = row[Posts.isPage],
-                    featuredImageUrl = row[Posts.featuredImageUrl],
-                    publishedAt = publishedAt?.let { isoFormatter.format(it) },
-                    publishedAtFormatted = publishedAt?.let { dateFormatter.format(it) },
-                    readingTimeMinutes = readingTime,
-                    tags = tags,
-                    languageCode = row[PostVariants.languageCode]
+            if (cleanLang != null) {
+                backfillQuery = backfillQuery.andWhere { PostVariants.languageCode eq cleanLang }
+            }
+
+            backfillQuery.orderBy(PostVariants.publishedAt to SortOrder.DESC)
+                .limit(limit - results.size)
+                .forEach { row ->
+                    val pid = row[Posts.id].value
+                    if (pid !in seenPostIds && results.size < limit) {
+                        seenPostIds.add(pid)
+                        results.add(rowToPublicPostListItem(row, pid))
+                    }
+                }
+        }
+
+        results
+    }
+
+    private fun rowToPublicPostListItem(row: ResultRow, postId: Long): PublicPostListItemDto {
+        val tags = (PostTags innerJoin Tags).selectAll()
+            .where { PostTags.postId eq postId }
+            .map { tagRow ->
+                TagDto(
+                    id = tagRow[Tags.id].value,
+                    blogId = tagRow[Tags.blogId].value,
+                    name = tagRow[Tags.name],
+                    slug = tagRow[Tags.slug]
                 )
             }
+
+        val publishedAt = row[PostVariants.publishedAt]
+        val contentHtml = row[PostVariants.contentHtml]
+        val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
+
+        return PublicPostListItemDto(
+            id = postId,
+            slug = row[PostVariants.slug],
+            title = row[PostVariants.title],
+            description = row[PostVariants.description],
+            isFeatured = row[Posts.isFeatured],
+            isPage = row[Posts.isPage],
+            featuredImageUrl = row[Posts.featuredImageUrl],
+            publishedAt = publishedAt?.let { isoFormatter.format(it) },
+            publishedAtFormatted = publishedAt?.let { dateFormatter.format(it) },
+            readingTimeMinutes = readingTime,
+            tags = tags,
+            languageCode = row[PostVariants.languageCode]
+        )
     }
 
     suspend fun getPublicPostBySlug(
@@ -236,6 +307,14 @@ class PostService(
         val wordCount = contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
         val readingTime = Math.max(1, Math.ceil(wordCount / 200.0).toInt())
 
+        val relatedPosts = getRelatedPosts(
+            blogId = blogId,
+            currentPostId = postId,
+            tagIds = tags.map { it.id },
+            limit = 3,
+            languageCode = row[PostVariants.languageCode]
+        )
+
         PublicPostDetailDto(
             id = postId,
             slug = row[PostVariants.slug],
@@ -252,7 +331,8 @@ class PostService(
             readingTimeMinutes = readingTime,
             wordCount = wordCount,
             tags = tags,
-            languageCode = row[PostVariants.languageCode]
+            languageCode = row[PostVariants.languageCode],
+            relatedPosts = relatedPosts
         )
     }
 
@@ -297,6 +377,7 @@ class PostService(
 
         val postId = dbQuery {
             val scheduledInstant = request.scheduledAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+            val publishedInstant = request.publishedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
             // 1. Insert Base Post
             val pId = Posts.insert {
@@ -318,7 +399,7 @@ class PostService(
                 it[PostVariants.contentJson] = request.contentJson
                 it[PostVariants.contentHtml] = request.contentHtml
                 it[PostVariants.status] = request.status.name
-                it[PostVariants.publishedAt] = if (request.status == PostStatus.PUBLISHED) now else null
+                it[PostVariants.publishedAt] = if (request.status == PostStatus.PUBLISHED) (publishedInstant ?: now) else null
                 it[PostVariants.scheduledAt] = scheduledInstant
                 it[PostVariants.updatedAt] = now
             }
@@ -379,6 +460,7 @@ class PostService(
         val lang = languageCode.trim().lowercase()
         val slug = request.slug.trim().lowercase()
         val scheduledInstant = request.scheduledAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
+        val publishedInstant = request.publishedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
 
         // Ensure post belongs to blog
         val post = getPostById(postId, blogId) ?: throw NoSuchElementException("Post not found")
@@ -399,7 +481,7 @@ class PostService(
                     it[PostVariants.contentHtml] = request.contentHtml ?: ""
                     val st = request.status ?: PostStatus.DRAFT
                     it[PostVariants.status] = st.name
-                    it[PostVariants.publishedAt] = if (st == PostStatus.PUBLISHED) now else null
+                    it[PostVariants.publishedAt] = if (st == PostStatus.PUBLISHED) (publishedInstant ?: now) else null
                     it[PostVariants.scheduledAt] = if (st == PostStatus.SCHEDULED) scheduledInstant else null
                     it[PostVariants.updatedAt] = now
                 }
@@ -413,9 +495,7 @@ class PostService(
                     request.status?.let { s ->
                         it[PostVariants.status] = s.name
                         if (s == PostStatus.PUBLISHED) {
-                            if (existingVariant[PostVariants.publishedAt] == null) {
-                                it[PostVariants.publishedAt] = now
-                            }
+                            it[PostVariants.publishedAt] = publishedInstant ?: existingVariant[PostVariants.publishedAt] ?: now
                             it[PostVariants.scheduledAt] = null
                         } else if (s == PostStatus.SCHEDULED) {
                             if (scheduledInstant != null) {
@@ -428,6 +508,9 @@ class PostService(
                     }
                     if (request.status == null && scheduledInstant != null) {
                         it[PostVariants.scheduledAt] = scheduledInstant
+                    }
+                    if (request.status == null && publishedInstant != null) {
+                        it[PostVariants.publishedAt] = publishedInstant
                     }
                     it[PostVariants.updatedAt] = now
                 }
@@ -527,18 +610,24 @@ class PostService(
         updatedAt = this[PostVariants.updatedAt]
     )
 
-    private fun PostVariant.toDto(): PostVariantDto = PostVariantDto(
-        id = this.id,
-        postId = this.postId,
-        languageCode = this.languageCode,
-        slug = this.slug,
-        title = this.title,
-        description = this.description,
-        contentJson = this.contentJson,
-        contentHtml = this.contentHtml,
-        status = this.status,
-        publishedAt = this.publishedAt?.toString(),
-        scheduledAt = this.scheduledAt?.toString(),
-        updatedAt = this.updatedAt.toString()
-    )
+    private fun PostVariant.toDto(): PostVariantDto {
+        val words = this.contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        val readingTime = Math.max(1, Math.ceil(words / 200.0).toInt())
+        return PostVariantDto(
+            id = this.id,
+            postId = this.postId,
+            languageCode = this.languageCode,
+            slug = this.slug,
+            title = this.title,
+            description = this.description,
+            contentJson = this.contentJson,
+            contentHtml = this.contentHtml,
+            status = this.status,
+            publishedAt = this.publishedAt?.toString(),
+            scheduledAt = this.scheduledAt?.toString(),
+            updatedAt = this.updatedAt.toString(),
+            readingTimeMinutes = readingTime,
+            wordCount = words
+        )
+    }
 }

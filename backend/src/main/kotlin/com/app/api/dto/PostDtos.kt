@@ -16,7 +16,8 @@ data class CreatePostRequest(
     val featuredImageUrl: String? = null,
     val tagIds: List<Long> = emptyList(),
     val status: PostStatus = PostStatus.DRAFT,
-    val scheduledAt: String? = null
+    val scheduledAt: String? = null,
+    val publishedAt: String? = null
 )
 
 @Serializable
@@ -36,7 +37,8 @@ data class UpdateVariantRequest(
     val contentJson: String? = null,
     val contentHtml: String? = null,
     val status: PostStatus? = null,
-    val scheduledAt: String? = null
+    val scheduledAt: String? = null,
+    val publishedAt: String? = null
 )
 
 @Serializable
@@ -52,7 +54,9 @@ data class PostVariantDto(
     val status: PostStatus,
     val publishedAt: String?,
     val scheduledAt: String? = null,
-    val updatedAt: String
+    val updatedAt: String,
+    val readingTimeMinutes: Int = 1,
+    val wordCount: Int = 0
 )
 
 @Serializable
@@ -120,7 +124,8 @@ data class PublicPostDetailDto(
     val readingTimeMinutes: Int,
     val wordCount: Int,
     val tags: List<TagDto> = emptyList(),
-    val languageCode: String
+    val languageCode: String,
+    val relatedPosts: List<PublicPostListItemDto> = emptyList()
 )
 
 @Serializable

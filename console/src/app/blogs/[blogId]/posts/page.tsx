@@ -170,16 +170,17 @@ export default function PostsListPage() {
         (p) => selectedIds.includes(p.id) && p.variant
       )
       await Promise.allSettled(
-        targetPosts.map((p) =>
-          api.posts.updateVariant(blogId, p.id, p.variant.languageCode, {
+        targetPosts.map((p) => {
+          if (!p.variant) return Promise.resolve()
+          return api.posts.updateVariant(blogId, p.id, p.variant.languageCode, {
             title: p.variant.title,
             slug: p.variant.slug,
-            description: p.variant.description,
+            description: p.variant.description || undefined,
             contentJson: p.variant.contentJson,
             contentHtml: p.variant.contentHtml,
             status,
           })
-        )
+        })
       )
       setSelectedIds([])
       await fetchPosts()
@@ -426,7 +427,25 @@ export default function PostsListPage() {
                             >
                               {title}
                             </Link>
-                            <p className="text-[11px] font-mono text-zinc-400 mt-0.5">/{slug}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[11px] font-mono text-zinc-400">/{slug}</span>
+                              <span className="text-zinc-300">&bull;</span>
+                              <span className="text-[10px] font-mono text-zinc-500">
+                                {p.variant?.readingTimeMinutes || 1} min read ({p.variant?.wordCount || 0} words)
+                              </span>
+                            </div>
+                            {p.tags && p.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1 mt-1.5">
+                                {p.tags.map((t) => (
+                                  <span
+                                    key={t.id}
+                                    className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-medium bg-zinc-100 text-zinc-600 border border-zinc-200/60"
+                                  >
+                                    #{t.name}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -453,6 +472,15 @@ export default function PostsListPage() {
                             />
                             {status}
                           </span>
+                          {status === 'PUBLISHED' && p.variant?.publishedAt && (
+                            <span className="text-[10px] font-mono text-zinc-400">
+                              {new Date(p.variant.publishedAt).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          )}
                           {status === 'SCHEDULED' && p.variant?.scheduledAt && (
                             <span className="text-[10px] font-mono text-purple-600">
                               {new Date(p.variant.scheduledAt).toLocaleString([], {

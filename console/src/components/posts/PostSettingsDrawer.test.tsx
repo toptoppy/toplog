@@ -55,4 +55,25 @@ describe('PostSettingsDrawer', () => {
     fireEvent.change(canonicalInput, { target: { value: 'https://new-canonical.dev' } })
     expect(defaultProps.setCanonicalUrl).toHaveBeenCalledWith('https://new-canonical.dev')
   })
+
+  it('renders publish date input and allows backdating', () => {
+    const setPublishedAt = vi.fn()
+    render(
+      <PostSettingsDrawer
+        {...defaultProps}
+        publishedAt="2024-05-10T12:00:00.000Z"
+        setPublishedAt={setPublishedAt}
+        postStatus="PUBLISHED"
+      />
+    )
+
+    expect(screen.getByText('Publish Date')).toBeInTheDocument()
+    expect(screen.getByText('Backdating')).toBeInTheDocument()
+
+    const dateInput = screen.getByDisplayValue('2024-05-10T12:00')
+    expect(dateInput).toBeInTheDocument()
+
+    fireEvent.change(dateInput, { target: { value: '2023-01-01T09:00' } })
+    expect(setPublishedAt).toHaveBeenCalledWith(new Date('2023-01-01T09:00').toISOString())
+  })
 })

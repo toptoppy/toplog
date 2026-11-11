@@ -88,6 +88,8 @@ export interface PostVariant {
   publishedAt: string | null
   scheduledAt: string | null
   updatedAt: string
+  readingTimeMinutes?: number
+  wordCount?: number
 }
 
 export interface Post {
@@ -127,6 +129,7 @@ export interface CreatePostInput {
   tagIds?: number[]
   status?: PostStatus
   scheduledAt?: string | null
+  publishedAt?: string | null
 }
 
 export interface UpdatePostBaseInput {
@@ -145,6 +148,30 @@ export interface UpdateVariantInput {
   contentHtml?: string
   status?: PostStatus
   scheduledAt?: string | null
+  publishedAt?: string | null
+}
+
+export interface PublicPostListItem {
+  id: number
+  slug: string
+  title: string
+  description: string | null
+  isFeatured: boolean
+  isPage: boolean
+  featuredImageUrl: string | null
+  publishedAt: string | null
+  publishedAtFormatted: string | null
+  readingTimeMinutes: number
+  tags: Tag[]
+  languageCode: string
+}
+
+export interface PublicPostDetail extends PublicPostListItem {
+  contentHtml: string
+  contentJson: string
+  canonicalUrl: string | null
+  wordCount: number
+  relatedPosts: PublicPostListItem[]
 }
 
 export interface Webhook {
