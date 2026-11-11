@@ -98,4 +98,15 @@ describe('GeneralDomainTab', () => {
     expect(liveLink).toBeInTheDocument()
     expect(liveLink).toHaveAttribute('href', 'https://blog.mycompany.com')
   })
+
+  it('renders supported languages (English and Thai) in Default Language select', () => {
+    render(<GeneralDomainTab {...defaultProps} />)
+    const select = screen.getByLabelText(/Default Language/i) as HTMLSelectElement
+    expect(select).toBeInTheDocument()
+    expect(select.value).toBe('en')
+
+    // Expect English and Thai options
+    expect(screen.getByRole('option', { name: /English/i })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: /ภาษาไทย/i })).toBeInTheDocument()
+  })
 })

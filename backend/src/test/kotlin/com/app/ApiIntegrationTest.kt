@@ -355,4 +355,128 @@ class ApiIntegrationTest {
         assertTrue(duplicatedPost.variants.first().title.contains("(Copy)"))
         assertEquals(PostStatus.DRAFT, duplicatedPost.variants.first().status)
     }
+
+    @Test
+    fun `test supported languages validation enforces EN and TH only`() = testApplication {
+        val tempDir = File.createTempFile("blogs_lang_test", "").apply {
+            delete()
+            mkdirs()
+        }
+        val config = createTestConfig(tempDir)
+        application {
+            configureApp(config, initDb = false, startScheduler = false)
+        }
+        val client = createClient {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
+            }
+        }
+
+        // Register and login
+        val regRes = client.post("/api/auth/register") {
+            contentType(ContentType.Application.Json)
+            setBody(RegisterRequest(name = "Lang User", email = "lang@test.com", password = "password123"))
+        }
+        val token = regRes.body<AuthResponse>().token
+
+        // 1. Creating blog with defaultLanguage = 'th' should succeed
+        val blogThRes = client.post("/api/console/blogs") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreateBlogRequest(subdomain = "thai-blog", title = "Thai Blog", defaultLanguage = "th"))
+        }
+        assertEquals(HttpStatusCode.Created, blogThRes.status)
+        val blogThId = blogThRes.body<BlogDto>().id
+        assertEquals("th", blogThRes.body<BlogDto>().defaultLanguage)
+
+        // 2. Creating blog with unsupported language 'ja' should fail 400
+        val blogJaRes = client.post("/api/console/blogs") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(CreateBlogRequest(subdomain = "japanese-blog", title = "Japanese Blog", defaultLanguage = "ja"))
+        }
+        assertEquals(HttpStatusCode.BadRequest, blogJaRes.status)
+
+        // 3. Updating blog defaultLanguage to unsupported language 'es' should fail 400
+        val blogUpdateRes = client.put("/api/console/blogs/$blogThId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(UpdateBlogRequest(defaultLanguage = "es"))
+        }
+        assertEquals(HttpStatusCode.BadRequest, blogUpdateRes.status)
+
+        // 4. Updating blog defaultLanguage to supported 'en' should succeed
+        val blogUpdateEnRes = client.put("/api/console/blogs/$blogThId") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(UpdateBlogRequest(defaultLanguage = "en"))
+        }
+        assertEquals(HttpStatusCode.OK, blogUpdateEnRes.status)
+        assertEquals("en", blogUpdateEnRes.body<BlogDto>().defaultLanguage)
+
+        // 5. Creating post with supported language 'th' should succeed
+        val postThRes = client.post("/api/console/blogs/$blogThId/posts") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                CreatePostRequest(
+                    title = "บทความภาษาไทย",
+                    slug = "thai-post",
+                    languageCode = "th",
+                    contentHtml = "<p>สวัสดีชาวโลก</p>",
+                    contentJson = "{}"
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.Created, postThRes.status)
+        val createdPost = postThRes.body<PostDto>()
+        assertEquals("th", createdPost.variants.first().languageCode)
+
+        // 6. Creating post with unsupported language 'de' should fail 400
+        val postDeRes = client.post("/api/console/blogs/$blogThId/posts") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                CreatePostRequest(
+                    title = "German Post",
+                    slug = "german-post",
+                    languageCode = "de",
+                    contentHtml = "<p>Hallo Welt</p>",
+                    contentJson = "{}"
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.BadRequest, postDeRes.status)
+
+        // 7. Adding supported variant 'en' to post should succeed
+        val addEnRes = client.put("/api/console/blogs/$blogThId/posts/${createdPost.id}/variants/en") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                UpdateVariantRequest(
+                    title = "English Counterpart",
+                    slug = "english-counterpart",
+                    contentHtml = "<p>Hello world in English</p>",
+                    contentJson = "{}"
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.OK, addEnRes.status)
+        assertEquals("en", addEnRes.body<PostVariantDto>().languageCode)
+
+        // 8. Adding unsupported variant 'fr' should fail 400
+        val addFrRes = client.put("/api/console/blogs/$blogThId/posts/${createdPost.id}/variants/fr") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                UpdateVariantRequest(
+                    title = "French Counterpart",
+                    slug = "french-counterpart",
+                    contentHtml = "<p>Bonjour le monde</p>",
+                    contentJson = "{}"
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.BadRequest, addFrRes.status)
+    }
 }

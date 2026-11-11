@@ -1,6 +1,7 @@
 package com.app.service
 
 import com.app.api.dto.*
+import com.app.config.AppConfig
 import com.app.domain.model.*
 import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.*
@@ -12,8 +13,10 @@ import java.util.Locale
 
 class PostService(
     private val webhookService: WebhookService? = null,
-    private val revisionService: RevisionService? = null
+    private val revisionService: RevisionService? = null,
+    private val config: AppConfig? = null
 ) {
+    val supportedLanguages: List<String> = config?.supportedLanguages ?: listOf("en", "th")
     private val dateFormatter = DateTimeFormatter.ofPattern("MMMM d, yyyy", Locale.ENGLISH)
         .withZone(ZoneId.of("UTC"))
     private val isoFormatter = DateTimeFormatter.ISO_INSTANT
@@ -377,6 +380,9 @@ class PostService(
     suspend fun createPost(blogId: Long, request: CreatePostRequest): PostDto {
         val now = Instant.now()
         val lang = request.languageCode.trim().lowercase()
+        require(supportedLanguages.contains(lang)) {
+            "Language '$lang' is not supported. Supported languages: ${supportedLanguages.joinToString(", ")}"
+        }
         val slug = request.slug.trim().lowercase()
 
         val postId = dbQuery {
@@ -462,6 +468,9 @@ class PostService(
     ): PostVariantDto {
         val now = Instant.now()
         val lang = languageCode.trim().lowercase()
+        require(supportedLanguages.contains(lang)) {
+            "Language '$lang' is not supported. Supported languages: ${supportedLanguages.joinToString(", ")}"
+        }
         val slug = request.slug.trim().lowercase()
         val scheduledInstant = request.scheduledAt?.let { runCatching { Instant.parse(it) }.getOrNull() }
         val publishedInstant = request.publishedAt?.let { runCatching { Instant.parse(it) }.getOrNull() }

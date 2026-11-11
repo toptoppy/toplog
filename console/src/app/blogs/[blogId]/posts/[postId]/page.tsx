@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, Post, PostStatus, PostVariant, PostRevision, AiStatus } from '@/lib/types'
+import { SUPPORTED_LANGUAGES, isLanguageSupported } from '@/lib/constants'
 import TipTapEditor from '@/components/editor/TipTapEditor'
 import PostSettingsDrawer from '@/components/posts/PostSettingsDrawer'
 import AddLanguageModal from '@/components/posts/AddLanguageModal'
@@ -397,6 +398,11 @@ export default function PostStudioPage() {
   const handleAddLanguageVariant = () => {
     const lang = newLangCode.trim().toLowerCase()
     if (!lang) return
+
+    if (!isLanguageSupported(lang)) {
+      alert(`Language '${lang}' is not supported. Supported: ${SUPPORTED_LANGUAGES.map((l) => l.code).join(', ')}`)
+      return
+    }
 
     if (post?.variants.some((v) => v.languageCode === lang)) {
       alert(`Variant for '${lang.toUpperCase()}' already exists.`)
@@ -815,40 +821,73 @@ export default function PostStudioPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="inline-flex items-center p-1 rounded-lg bg-zinc-100 border border-zinc-200/80 gap-1 overflow-x-auto">
           <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 px-2">
-            Lang:
+            Language:
           </span>
-          {post.variants.map((v) => {
-            const active = activeLang === v.languageCode
+          {SUPPORTED_LANGUAGES.map((lang) => {
+            const v = post.variants.find((item) => item.languageCode === lang.code)
+            const active = activeLang === lang.code
+
+            if (v) {
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => selectVariant(v)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold uppercase transition-all ${
+                    active
+                      ? 'bg-white text-zinc-900 shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-900'
+                  }`}
+                  title={`${lang.nativeName} (${lang.label}) - ${v.status}`}
+                >
+                  <span className="text-base">{lang.flag}</span>
+                  <span>{lang.code}</span>
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      v.status === 'PUBLISHED' ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                  />
+                </button>
+              )
+            }
+
+            // Not yet added: quick-add / prompt
             return (
               <button
-                key={v.languageCode}
-                onClick={() => selectVariant(v)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-semibold uppercase transition-all ${
-                  active
-                    ? 'bg-white text-zinc-900 shadow-sm'
-                    : 'text-zinc-500 hover:text-zinc-900'
-                }`}
+                key={lang.code}
+                onClick={() => {
+                  setNewLangCode(lang.code)
+                  setShowAddLangModal(true)
+                }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-all border border-dashed border-zinc-300"
+                title={`Click to add ${lang.nativeName} (${lang.label}) variant`}
               >
-                <span>{v.languageCode}</span>
-                <span
-                  className={`h-1.5 w-1.5 rounded-full ${
-                    v.status === 'PUBLISHED' ? 'bg-emerald-500' : 'bg-amber-500'
-                  }`}
-                />
+                <span className="text-base opacity-60">{lang.flag}</span>
+                <span className="uppercase">{lang.code}</span>
+                <Plus className="h-3 w-3 text-zinc-400" />
               </button>
             )
           })}
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowAddLangModal(true)}
-            className="inline-flex items-center gap-1 rounded-lg border border-dashed border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 transition"
-          >
-            <Plus className="h-3 w-3" />
-            <span>Add Translation</span>
-          </button>
-        </div>
+        {/* Action button if any supported language is missing */}
+        {SUPPORTED_LANGUAGES.some((l) => !post.variants.some((v) => v.languageCode === l.code)) && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                const missing = SUPPORTED_LANGUAGES.find((l) => !post.variants.some((v) => v.languageCode === l.code))
+                if (missing) {
+                  setNewLangCode(missing.code)
+                  setTargetAiLang(missing.code)
+                }
+                setShowAddLangModal(true)
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 transition"
+            >
+              <Plus className="h-3 w-3" />
+              <span>Add Counterpart Draft</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Main Studio Area - Full Page Width with Perfectly Aligned Box Edges */}
@@ -954,6 +993,7 @@ export default function PostStudioPage() {
         newLangCode={newLangCode}
         setNewLangCode={setNewLangCode}
         onAdd={handleAddLanguageVariant}
+        existingLanguages={post?.variants?.map((v) => v.languageCode) || []}
       />
 
       <AiTranslateModal
@@ -965,6 +1005,7 @@ export default function PostStudioPage() {
         setTargetAiLang={setTargetAiLang}
         translating={translating}
         onTranslate={handleAiTranslate}
+        existingLanguages={post?.variants?.map((v) => v.languageCode) || []}
       />
 
       <SendNewsletterModal

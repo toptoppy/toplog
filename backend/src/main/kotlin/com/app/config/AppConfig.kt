@@ -16,11 +16,19 @@ data class AppConfig(
     val baseDomain: String,
     val aiApiKey: String?,
     val aiBaseUrl: String,
-    val aiModel: String
+    val aiModel: String,
+    val supportedLanguages: List<String> = listOf("en", "th")
 ) {
     companion object {
         fun fromApplicationConfig(config: ApplicationConfig): AppConfig {
             val (resolvedApiKey, resolvedBaseUrl, resolvedModel) = resolveAiSettings(config)
+            val rawLanguages = config.tryGetString("app.supportedLanguages")
+                ?: System.getenv("SUPPORTED_LANGUAGES")
+                ?: "en,th"
+            val supportedLanguages = rawLanguages.split(",")
+                .map { it.trim().lowercase() }
+                .filter { it.isNotEmpty() }
+                .ifEmpty { listOf("en", "th") }
             return AppConfig(
                 dbUrl = config.tryGetString("database.url") ?: "jdbc:postgresql://localhost:5432/blogdb",
                 dbUser = config.tryGetString("database.user") ?: "postgres",
@@ -35,7 +43,8 @@ data class AppConfig(
                 baseDomain = config.tryGetString("app.baseDomain") ?: "localhost",
                 aiApiKey = resolvedApiKey,
                 aiBaseUrl = resolvedBaseUrl,
-                aiModel = resolvedModel
+                aiModel = resolvedModel,
+                supportedLanguages = supportedLanguages
             )
         }
 

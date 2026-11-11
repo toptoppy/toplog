@@ -3,12 +3,16 @@ package com.app.service
 import com.app.api.dto.BlogDto
 import com.app.api.dto.CreateBlogRequest
 import com.app.api.dto.UpdateBlogRequest
+import com.app.config.AppConfig
 import com.app.domain.model.*
 import com.app.infrastructure.database.DatabaseFactory.dbQuery
 import org.jetbrains.exposed.sql.*
 import java.time.Instant
 
-class BlogService {
+class BlogService(
+    private val config: AppConfig? = null
+) {
+    val supportedLanguages: List<String> = config?.supportedLanguages ?: listOf("en", "th")
 
     suspend fun listBlogsForUser(userId: Long): List<BlogDto> = dbQuery {
         val ownedBlogIds = Blogs.select(Blogs.id)
@@ -75,6 +79,10 @@ class BlogService {
     suspend fun createBlog(userId: Long, request: CreateBlogRequest): BlogDto {
         val sub = request.subdomain.trim().lowercase()
         require(sub.matches(Regex("^[a-z0-9-]+$"))) { "Subdomain must contain only lowercase letters, numbers, and hyphens" }
+        val defaultLang = request.defaultLanguage.trim().lowercase()
+        require(supportedLanguages.contains(defaultLang)) {
+            "Default language '$defaultLang' is not supported. Supported languages: ${supportedLanguages.joinToString(", ")}"
+        }
 
         val existing = dbQuery {
             Blogs.selectAll().where { Blogs.subdomain eq sub }.firstOrNull()
@@ -143,7 +151,13 @@ class BlogService {
                         it[Blogs.domainVerifiedAt] = null
                     }
                 }
-                request.defaultLanguage?.let { l -> it[Blogs.defaultLanguage] = l.trim().lowercase() }
+                request.defaultLanguage?.let { l ->
+                    val cleanLang = l.trim().lowercase()
+                    require(supportedLanguages.contains(cleanLang)) {
+                        "Default language '$cleanLang' is not supported. Supported languages: ${supportedLanguages.joinToString(", ")}"
+                    }
+                    it[Blogs.defaultLanguage] = cleanLang
+                }
                 request.themeName?.let { th -> it[Blogs.themeName] = th.trim() }
                 request.codeHead?.let { ch -> it[Blogs.codeHead] = ch.ifBlank { null } }
                 request.codeFoot?.let { cf -> it[Blogs.codeFoot] = cf.ifBlank { null } }

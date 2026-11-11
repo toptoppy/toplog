@@ -133,6 +133,10 @@ class AiService(private val config: AppConfig) {
         targetLang: String,
         blogId: Long? = null
     ): AiTranslationResult {
+        val target = targetLang.trim().lowercase()
+        require(config.supportedLanguages.contains(target)) {
+            "Target language '$target' is not supported. Supported languages: ${config.supportedLanguages.joinToString(", ")}"
+        }
         val (apiKey, baseUrl, model) = resolveConfig(blogId)
         if (apiKey.isNullOrBlank()) {
             throw IllegalArgumentException("AI service is not configured. Please set an API key in Blog Settings or environment.")

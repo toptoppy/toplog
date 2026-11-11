@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, PostListItem } from '@/lib/types'
+import { getLanguageOption } from '@/lib/constants'
 import BulkActionsBar from '@/components/posts/BulkActionsBar'
 import {
   Plus,
@@ -568,9 +569,18 @@ export default function PostsListPage() {
                       </td>
 
                       <td className="px-4 py-4">
-                        <span className="rounded bg-zinc-100 border border-zinc-200/80 px-2 py-0.5 text-[10px] font-mono font-medium text-zinc-700 uppercase">
-                          {lang}
-                        </span>
+                        {(() => {
+                          const langOpt = getLanguageOption(lang)
+                          return (
+                            <span
+                              className="inline-flex items-center gap-1 rounded bg-zinc-100 border border-zinc-200/80 px-2 py-0.5 text-[10px] font-mono font-medium text-zinc-700 uppercase"
+                              title={`${langOpt.nativeName} (${langOpt.label})`}
+                            >
+                              <span>{langOpt.flag}</span>
+                              <span>{langOpt.code}</span>
+                            </span>
+                          )
+                        })()}
                       </td>
 
                       <td className="px-4 py-4 text-zinc-500 text-xs">

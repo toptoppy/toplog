@@ -45,10 +45,10 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
     val isProd = System.getenv("KTOR_ENV")?.equals("production", ignoreCase = true) == true
     val jwtService = JwtService(config)
     val authService = AuthService(jwtService)
-    val blogService = BlogService()
+    val blogService = BlogService(config)
     val webhookService = WebhookService(allowLocalhost = !isProd)
     val revisionService = RevisionService()
-    val postService = PostService(webhookService, revisionService)
+    val postService = PostService(webhookService, revisionService, config)
     val exportService = ExportService(blogService, postService)
     val ogImageService = OgImageService()
     val tagService = TagService()

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, PostStatus } from '@/lib/types'
+import { SUPPORTED_LANGUAGES } from '@/lib/constants'
 import TipTapEditor from '@/components/editor/TipTapEditor'
 import { ChevronLeft, Save, Send, Star } from 'lucide-react'
 
@@ -228,14 +229,25 @@ export default function NewPostPage() {
               />
             </div>
 
-            <div className="flex items-center gap-1.5 font-mono text-zinc-400">
-              <span>Lang:</span>
-              <input
-                type="text"
-                value={languageCode}
-                onChange={(e) => setLanguageCode(e.target.value.toLowerCase())}
-                className="w-10 rounded border border-zinc-200 px-1.5 py-0.5 text-xs font-mono uppercase font-semibold text-zinc-800 focus:outline-none focus:border-zinc-900"
-              />
+            <div className="flex items-center gap-1.5 font-mono text-zinc-500">
+              <span className="text-xs">Language:</span>
+              <div className="inline-flex items-center rounded-md border border-zinc-200 p-0.5 bg-zinc-50">
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    type="button"
+                    onClick={() => setLanguageCode(lang.code)}
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold uppercase transition ${
+                      languageCode === lang.code
+                        ? 'bg-white text-zinc-900 shadow-xs'
+                        : 'text-zinc-400 hover:text-zinc-700'
+                    }`}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.code}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             <label className="flex items-center gap-1.5 cursor-pointer ml-auto select-none">
