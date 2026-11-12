@@ -321,6 +321,20 @@ class PostService(
             languageCode = row[PostVariants.languageCode]
         )
 
+        val alternateLanguages = PostVariants.selectAll()
+            .where {
+                (PostVariants.postId eq postId) and
+                (PostVariants.status eq PostStatus.PUBLISHED.name)
+            }
+            .orderBy(PostVariants.languageCode to SortOrder.ASC)
+            .map { varRow ->
+                PostAlternateLanguageDto(
+                    languageCode = varRow[PostVariants.languageCode],
+                    slug = varRow[PostVariants.slug],
+                    title = varRow[PostVariants.title]
+                )
+            }
+
         PublicPostDetailDto(
             id = postId,
             slug = row[PostVariants.slug],
@@ -338,7 +352,8 @@ class PostService(
             wordCount = wordCount,
             tags = tags,
             languageCode = row[PostVariants.languageCode],
-            relatedPosts = relatedPosts
+            relatedPosts = relatedPosts,
+            alternateLanguages = alternateLanguages
         )
     }
 

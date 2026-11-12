@@ -27,6 +27,11 @@
     <meta name="twitter:description" content="{% block twitter_description %}{{ blog.description }}{% endblock %}">
     {% if post is not empty and post.slug is not empty %}
     <link rel="canonical" href="{% if post.canonicalUrl %}{{ post.canonicalUrl }}{% else %}{{ baseUrl }}/{{ post.slug }}{% endif %}">
+    {% if alternateLanguages is not empty %}
+    {% for alt in alternateLanguages %}
+    <link rel="alternate" hreflang="{{ alt.languageCode }}" href="{{ baseUrl }}/{{ alt.slug }}">
+    {% endfor %}
+    {% endif %}
     {% else %}
     <link rel="canonical" href="{{ baseUrl }}/">
     {% endif %}

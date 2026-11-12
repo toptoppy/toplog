@@ -478,5 +478,39 @@ class ApiIntegrationTest {
             )
         }
         assertEquals(HttpStatusCode.BadRequest, addFrRes.status)
+
+        // 9. Publish both variants and verify alternateLanguages in PublicPostDetailDto
+        val pubThRes = client.put("/api/console/blogs/$blogThId/posts/${createdPost.id}/variants/th") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                UpdateVariantRequest(
+                    title = "บทความภาษาไทย",
+                    slug = "thai-post",
+                    status = PostStatus.PUBLISHED
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.OK, pubThRes.status)
+
+        val pubEnRes = client.put("/api/console/blogs/$blogThId/posts/${createdPost.id}/variants/en") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+            contentType(ContentType.Application.Json)
+            setBody(
+                UpdateVariantRequest(
+                    title = "English Counterpart",
+                    slug = "english-counterpart",
+                    status = PostStatus.PUBLISHED
+                )
+            )
+        }
+        assertEquals(HttpStatusCode.OK, pubEnRes.status)
+
+        val publicThDetail = client.get("/api/public/posts/thai-post?subdomain=thai-blog").body<PublicPostDetailDto>()
+        assertEquals(2, publicThDetail.alternateLanguages.size)
+        assertEquals("en", publicThDetail.alternateLanguages[0].languageCode)
+        assertEquals("english-counterpart", publicThDetail.alternateLanguages[0].slug)
+        assertEquals("th", publicThDetail.alternateLanguages[1].languageCode)
+        assertEquals("thai-post", publicThDetail.alternateLanguages[1].slug)
     }
 }

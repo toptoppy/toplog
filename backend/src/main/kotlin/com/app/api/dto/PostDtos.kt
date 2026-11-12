@@ -108,6 +108,13 @@ data class PublicPostListItemDto(
 )
 
 @Serializable
+data class PostAlternateLanguageDto(
+    val languageCode: String,
+    val slug: String,
+    val title: String
+)
+
+@Serializable
 data class PublicPostDetailDto(
     val id: Long,
     val slug: String,
@@ -125,7 +132,8 @@ data class PublicPostDetailDto(
     val wordCount: Int,
     val tags: List<TagDto> = emptyList(),
     val languageCode: String,
-    val relatedPosts: List<PublicPostListItemDto> = emptyList()
+    val relatedPosts: List<PublicPostListItemDto> = emptyList(),
+    val alternateLanguages: List<PostAlternateLanguageDto> = emptyList()
 )
 
 @Serializable

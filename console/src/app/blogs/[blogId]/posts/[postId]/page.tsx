@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, Post, PostStatus, PostVariant, PostRevision, AiStatus } from '@/lib/types'
-import { SUPPORTED_LANGUAGES, isLanguageSupported } from '@/lib/constants'
+import { SUPPORTED_LANGUAGES, isLanguageSupported, getLanguageOption } from '@/lib/constants'
 import TipTapEditor from '@/components/editor/TipTapEditor'
 import PostSettingsDrawer from '@/components/posts/PostSettingsDrawer'
 import AddLanguageModal from '@/components/posts/AddLanguageModal'
@@ -37,6 +37,9 @@ import {
   Command,
   CheckSquare,
   FileDown,
+  Columns,
+  Copy,
+  Check,
 } from 'lucide-react'
 
 export default function PostStudioPage() {
@@ -70,6 +73,8 @@ export default function PostStudioPage() {
   // Add Variant Modal State
   const [showAddLangModal, setShowAddLangModal] = useState(false)
   const [newLangCode, setNewLangCode] = useState('')
+  const [isSplitMode, setIsSplitMode] = useState(false)
+  const [copiedSource, setCopiedSource] = useState(false)
 
   // AI Assistant State
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null)
@@ -538,6 +543,7 @@ export default function PostStudioPage() {
   }
 
   const livePostUrl = getPublicUrl()
+  const counterpartVariant = post.variants.find((v) => v.languageCode !== activeLang)
 
   return (
     <div className="w-full p-8 space-y-6">
@@ -869,9 +875,26 @@ export default function PostStudioPage() {
           })}
         </div>
 
-        {/* Action button if any supported language is missing */}
-        {SUPPORTED_LANGUAGES.some((l) => !post.variants.some((v) => v.languageCode === l.code)) && (
-          <div className="flex items-center gap-2">
+        {/* Action buttons */}
+        <div className="flex items-center gap-2">
+          {post.variants.length > 1 && counterpartVariant && (
+            <button
+              type="button"
+              onClick={() => setIsSplitMode(!isSplitMode)}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border ${
+                isSplitMode
+                  ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
+                  : 'bg-white text-zinc-700 border-zinc-300 hover:border-zinc-400 hover:text-zinc-900'
+              }`}
+              title="Toggle Split-Screen Translation Workbench"
+            >
+              <Columns className="h-3.5 w-3.5" />
+              <span>{isSplitMode ? 'Exit Split View' : 'Split Translation View'}</span>
+            </button>
+          )}
+
+          {/* Action button if any supported language is missing */}
+          {SUPPORTED_LANGUAGES.some((l) => !post.variants.some((v) => v.languageCode === l.code)) && (
             <button
               onClick={() => {
                 const missing = SUPPORTED_LANGUAGES.find((l) => !post.variants.some((v) => v.languageCode === l.code))
@@ -886,14 +909,88 @@ export default function PostStudioPage() {
               <Plus className="h-3 w-3" />
               <span>Add Counterpart Draft</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Main Studio Area - Full Page Width with Perfectly Aligned Box Edges */}
       <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
-        {/* Unified Editor Card - Left Side (Aligns Side-to-Side Flush) */}
+        {/* Split Workbench: Read-Only Reference Panel on the Left */}
+        {isSplitMode && counterpartVariant && (
+          <div className="flex-1 min-w-0 w-full rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="px-5 py-3 bg-zinc-50 border-b border-zinc-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{getLanguageOption(counterpartVariant.languageCode).flag}</span>
+                <span className="text-xs font-bold text-zinc-900 uppercase tracking-tight">
+                  {getLanguageOption(counterpartVariant.languageCode).label} ({counterpartVariant.languageCode.toUpperCase()}) Reference
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-200/70 text-zinc-600 font-medium">
+                  {counterpartVariant.status}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(
+                    `${counterpartVariant.title}\n\n${counterpartVariant.description || ''}\n\n${counterpartVariant.contentHtml.replace(/<[^>]*>/g, '')}`
+                  )
+                  setCopiedSource(true)
+                  setTimeout(() => setCopiedSource(false), 2000)
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition"
+                title="Copy reference text to clipboard"
+              >
+                {copiedSource ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
+                <span>{copiedSource ? 'Copied' : 'Copy Text'}</span>
+              </button>
+            </div>
+
+            <div className="p-6 border-b border-zinc-100 bg-zinc-50/20">
+              <h2 className="text-xl lg:text-2xl font-bold tracking-tight text-zinc-900 leading-snug">
+                {counterpartVariant.title}
+              </h2>
+              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-zinc-200/60 text-xs font-mono text-zinc-400">
+                <span>/{counterpartVariant.slug}</span>
+                <span>&bull;</span>
+                <span>{counterpartVariant.wordCount} words</span>
+              </div>
+              {counterpartVariant.description && (
+                <p className="mt-3 text-xs text-zinc-600 bg-zinc-50 p-3 rounded-lg border border-zinc-200/70 leading-relaxed">
+                  {counterpartVariant.description}
+                </p>
+              )}
+            </div>
+
+            <div className="p-6 max-h-[calc(100vh-280px)] overflow-y-auto prose prose-zinc prose-sm bg-white">
+              <div
+                dangerouslySetInnerHTML={{
+                  __html:
+                    counterpartVariant.contentHtml ||
+                    '<p class="text-zinc-400 italic">No content in reference variant.</p>',
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Unified Editor Card - Left/Right Side */}
         <div className="flex-1 min-w-0 w-full rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+          {isSplitMode && (
+            <div className="px-5 py-3 bg-zinc-900 text-white flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{getLanguageOption(activeLang).flag}</span>
+                <span className="text-xs font-bold uppercase tracking-tight">
+                  Editing: {getLanguageOption(activeLang).nativeName} ({activeLang.toUpperCase()})
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium">
+                  {status}
+                </span>
+              </div>
+              <span className="text-[11px] font-mono text-zinc-400">
+                {autoSaveStatus === 'saved' ? 'Saved' : autoSaveStatus === 'saving' ? 'Saving...' : ''}
+              </span>
+            </div>
+          )}
           {/* Post Header: Title & URL Slug integrated into the box */}
           <div className="p-6 border-b border-zinc-100">
             <input

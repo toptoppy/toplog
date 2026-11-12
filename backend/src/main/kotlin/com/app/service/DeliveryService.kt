@@ -157,12 +157,29 @@ class DeliveryService(
             )
         } ?: emptyList()
 
+        val alternateLanguages = dbQuery {
+            PostVariants.selectAll()
+                .where {
+                    (PostVariants.postId eq postId) and
+                    (PostVariants.status eq PostStatus.PUBLISHED.name)
+                }
+                .orderBy(PostVariants.languageCode to SortOrder.ASC)
+                .map {
+                    mapOf(
+                        "languageCode" to it[PostVariants.languageCode],
+                        "slug" to it[PostVariants.slug],
+                        "title" to it[PostVariants.title]
+                    )
+                }
+        }
+
         val context = mapOf(
             "blog" to blogToContext(blog),
             "post" to postData.first,
             "postId" to postId,
             "comments" to comments,
             "relatedPosts" to relatedPosts,
+            "alternateLanguages" to alternateLanguages,
             "readingTimeMinutes" to readingTime,
             "wordCount" to wordCount,
             "tags" to postData.second,

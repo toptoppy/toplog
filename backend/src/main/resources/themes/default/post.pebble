@@ -20,6 +20,19 @@
             {% endif %}
         </div>
 
+        {% if alternateLanguages is not empty and alternateLanguages.size > 1 %}
+        <div class="bilingual-switch-banner">
+            <span class="bilingual-switch-label">Also available in:</span>
+            {% for alt in alternateLanguages %}
+                {% if alt.languageCode != language %}
+                    <a href="/{{ alt.slug }}" class="bilingual-switch-pill" hreflang="{{ alt.languageCode }}">
+                        {% if alt.languageCode == "th" %}🇹🇭 ภาษาไทย (Thai){% else %}🇬🇧 English{% endif %}
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- 1-Click Social Sharing Toolbar -->
         <div class="social-share-toolbar">
             <span class="share-label">Share:</span>
