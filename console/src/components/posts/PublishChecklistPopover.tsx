@@ -71,13 +71,13 @@ export default function PublishChecklistPopover({
   const allRequiredPassed = checks.filter((c) => c.required).every((c) => c.passed)
 
   return (
-    <div className="w-80 rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-xl text-zinc-900 animate-in fade-in zoom-in-95 duration-150">
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+    <div className="w-80 rounded-container border border-neutral-200 bg-white p-4 shadow-astryx-med text-neutral-900 animate-in fade-in zoom-in-95 duration-150">
+      <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
         <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-zinc-900">Pre-Flight Checklist</span>
+          <span className="text-xs font-semibold text-neutral-900">Pre-Flight Checklist</span>
         </div>
         <span
-          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-mono font-medium ${
+          className={`inline-flex items-center rounded-element px-2 py-0.5 text-[10px] font-mono font-medium ${
             allRequiredPassed && passedCount === totalCount
               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
               : allRequiredPassed
@@ -93,7 +93,7 @@ export default function PublishChecklistPopover({
         {checks.map((chk) => (
           <div
             key={chk.id}
-            className="flex items-start justify-between gap-2.5 rounded-lg p-1.5 hover:bg-zinc-50 transition"
+            className="flex items-start justify-between gap-2.5 rounded-inner p-1.5 hover:bg-neutral-50 transition"
           >
             <div className="flex items-start gap-2 min-w-0">
               {chk.passed ? (
@@ -101,20 +101,20 @@ export default function PublishChecklistPopover({
               ) : (
                 <AlertCircle
                   className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    chk.required ? 'text-amber-500' : 'text-zinc-400'
+                    chk.required ? 'text-amber-500' : 'text-neutral-400'
                   }`}
                 />
               )}
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-zinc-800">{chk.label}</span>
+                  <span className="text-xs font-medium text-neutral-800">{chk.label}</span>
                   {chk.required ? (
                     <span className="text-[10px] text-red-500 font-mono">*</span>
                   ) : (
-                    <span className="text-[9px] text-zinc-400 uppercase font-mono">optional</span>
+                    <span className="text-[9px] text-neutral-400 uppercase font-mono">optional</span>
                   )}
                 </div>
-                <p className="text-[11px] text-zinc-500 leading-tight truncate">{chk.desc}</p>
+                <p className="text-[11px] text-neutral-500 leading-tight truncate">{chk.desc}</p>
               </div>
             </div>
 
@@ -132,7 +132,7 @@ export default function PublishChecklistPopover({
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+      <div className="mt-3 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
         <span>{allRequiredPassed ? 'Ready to publish' : 'Required fields missing'}</span>
       </div>
     </div>

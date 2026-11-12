@@ -144,9 +144,9 @@ export default function NewPostPage() {
   }
 
   return (
-    <div className="w-full p-8 space-y-6">
-      {/* Top Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-zinc-200/80">
+    <div className="w-full p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Header Bar - Astryx Action Toolbar */}
+      <div className="rounded-container border border-zinc-200/90 bg-white p-4 shadow-astryx-low flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <Link
           href={`/blogs/${blogId}/posts`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition"
@@ -165,7 +165,7 @@ export default function NewPostPage() {
             type="button"
             disabled={saving}
             onClick={() => handleSave('DRAFT')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-astryx-low hover:bg-zinc-50 disabled:opacity-50 transition"
           >
             <Save className="h-3.5 w-3.5 text-zinc-400" />
             <span>Save Draft</span>
@@ -174,7 +174,7 @@ export default function NewPostPage() {
             type="button"
             disabled={saving}
             onClick={() => handleSave('PUBLISHED')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white shadow-astryx-low hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
           >
             <Send className="h-3.5 w-3.5" />
             <span>Publish Post</span>
@@ -183,7 +183,7 @@ export default function NewPostPage() {
       </div>
 
       {hasRestoredDraft && (
-        <div className="rounded-xl bg-amber-50 border border-amber-200/80 p-3.5 flex items-center justify-between text-xs text-amber-800 animate-in fade-in">
+        <div className="rounded-element bg-amber-50 border border-amber-200/80 p-3.5 flex items-center justify-between text-xs text-amber-800 shadow-astryx-low animate-in fade-in">
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-amber-500" />
             <span>Restored unsaved draft from local storage.</span>
@@ -199,13 +199,13 @@ export default function NewPostPage() {
       )}
 
       {error && (
-        <div className="rounded-lg bg-red-50 p-3.5 text-xs font-mono text-red-600 border border-red-200">
+        <div className="rounded-element bg-red-50 p-3.5 text-xs font-mono text-red-600 border border-red-200 shadow-astryx-low">
           {error}
         </div>
       )}
 
       {/* Unified Editor Card - Aligned Side to Side */}
-      <div className="w-full rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="w-full rounded-container border border-zinc-200/90 bg-white shadow-astryx-low overflow-hidden">
         {/* Title Input */}
         <div className="p-6 border-b border-zinc-100">
           <input
@@ -231,15 +231,15 @@ export default function NewPostPage() {
 
             <div className="flex items-center gap-1.5 font-mono text-zinc-500">
               <span className="text-xs">Language:</span>
-              <div className="inline-flex items-center rounded-md border border-zinc-200 p-0.5 bg-zinc-50">
+              <div className="inline-flex items-center rounded-inner border border-zinc-200 p-0.5 bg-zinc-50 shadow-astryx-low">
                 {SUPPORTED_LANGUAGES.map((lang) => (
                   <button
                     key={lang.code}
                     type="button"
                     onClick={() => setLanguageCode(lang.code)}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs font-semibold uppercase transition ${
+                    className={`flex items-center gap-1 px-2 py-0.5 rounded-inner text-xs font-semibold uppercase transition ${
                       languageCode === lang.code
-                        ? 'bg-white text-zinc-900 shadow-xs'
+                        ? 'bg-white text-zinc-900 shadow-astryx-low'
                         : 'text-zinc-400 hover:text-zinc-700'
                     }`}
                   >

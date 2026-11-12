@@ -125,15 +125,15 @@ export default function AiSettingsTab({
   return (
     <div className="space-y-6">
       {/* Top Overview & Status Card */}
-      <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-zinc-100">
+      <div className="rounded-container border border-neutral-200 bg-white p-6 shadow-astryx-low space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-neutral-100">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 border border-purple-200/80 text-purple-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-element bg-neutral-100 border border-neutral-200 text-neutral-900 shadow-astryx-low">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-zinc-900 tracking-tight">OpenRouter & LLM Engine</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <h3 className="text-base font-semibold text-neutral-900 tracking-tight">OpenRouter & LLM Engine</h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
                 Powers 1-click multilingual translation and automated SEO optimization.
               </p>
             </div>
@@ -141,25 +141,25 @@ export default function AiSettingsTab({
 
           <div className="flex items-center gap-2">
             {blog?.hasCustomAiKey ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="inline-flex items-center gap-1.5 rounded-element px-2.5 py-1 text-xs font-mono font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
                 <Key className="h-3 w-3" />
                 Blog-Specific Key
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200">
+              <span className="inline-flex items-center gap-1.5 rounded-element px-2.5 py-1 text-xs font-mono font-medium bg-neutral-100 text-neutral-700 border border-neutral-200">
                 System Default (.env)
               </span>
             )}
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-mono font-medium ${
+              className={`inline-flex items-center gap-1.5 rounded-element px-2.5 py-1 text-xs font-mono font-medium ${
                 aiStatus?.configured
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
+                  : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
               }`}
             >
               <span
                 className={`h-2 w-2 rounded-full ${
-                  aiStatus?.configured ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'
+                  aiStatus?.configured ? 'bg-emerald-500 animate-pulse' : 'bg-neutral-400'
                 }`}
               />
               {aiStatus?.configured ? 'Connected' : 'Not Configured'}
@@ -169,27 +169,27 @@ export default function AiSettingsTab({
 
         {/* Status details grid */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+          <div className="rounded-element border border-neutral-200 bg-neutral-50/60 p-4">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block">
               Active Provider
             </span>
-            <p className="mt-1.5 text-sm font-bold text-zinc-900">{aiStatus?.provider || 'OpenRouter'}</p>
+            <p className="mt-1.5 text-sm font-semibold text-neutral-900">{aiStatus?.provider || 'OpenRouter'}</p>
           </div>
 
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+          <div className="rounded-element border border-neutral-200 bg-neutral-50/60 p-4">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block">
               Active Model
             </span>
-            <p className="mt-1.5 text-xs font-mono font-medium text-purple-700 truncate">
+            <p className="mt-1.5 text-xs font-mono font-medium text-neutral-900 truncate">
               {aiStatus?.model || 'google/gemini-2.0-flash-001'}
             </p>
           </div>
 
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 block">
+          <div className="rounded-element border border-neutral-200 bg-neutral-50/60 p-4">
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-neutral-400 block">
               API Endpoint
             </span>
-            <p className="mt-1.5 text-xs font-mono text-zinc-600 truncate">
+            <p className="mt-1.5 text-xs font-mono text-neutral-600 truncate">
               {aiStatus?.baseUrl || 'https://openrouter.ai/api/v1'}
             </p>
           </div>
@@ -197,17 +197,17 @@ export default function AiSettingsTab({
       </div>
 
       {/* Interactive Configuration Card */}
-      <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-6">
+      <div className="rounded-container border border-neutral-200 bg-white p-6 shadow-astryx-low space-y-6">
         <div>
-          <h4 className="text-sm font-bold text-zinc-900 tracking-tight">Blog AI Configuration</h4>
-          <p className="text-xs text-zinc-500 mt-1">
+          <h4 className="text-sm font-semibold text-neutral-900 tracking-tight">Blog AI Configuration</h4>
+          <p className="text-xs text-neutral-500 mt-1">
             Configure your own API credentials for this blog or switch between AI providers.
           </p>
         </div>
 
         {/* Provider Presets */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+          <label className="block text-xs font-semibold uppercase text-neutral-600 tracking-wider">
             Quick Provider Presets
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -220,17 +220,17 @@ export default function AiSettingsTab({
                   key={preset.id}
                   type="button"
                   onClick={() => handleSelectProviderPreset(preset)}
-                  className={`flex flex-col text-left p-3 rounded-lg border transition ${
+                  className={`flex flex-col text-left p-3 rounded-element border transition ${
                     isSelected
-                      ? 'border-purple-600 bg-purple-50/50 shadow-sm'
-                      : 'border-zinc-200 bg-zinc-50/50 hover:border-zinc-300 hover:bg-zinc-50'
+                      ? 'border-neutral-900 bg-neutral-100/70 shadow-astryx-low'
+                      : 'border-neutral-200 bg-neutral-50/50 hover:border-neutral-300 hover:bg-neutral-50'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full">
-                    <span className="text-xs font-bold text-zinc-900">{preset.name.split(' ')[0]}</span>
-                    {isSelected && <Check className="h-3.5 w-3.5 text-purple-600" />}
+                    <span className="text-xs font-semibold text-neutral-900">{preset.name.split(' ')[0]}</span>
+                    {isSelected && <Check className="h-3.5 w-3.5 text-neutral-900" />}
                   </div>
-                  <span className="text-[11px] text-zinc-500 mt-1">{preset.badge}</span>
+                  <span className="text-[11px] text-neutral-500 mt-1">{preset.badge}</span>
                 </button>
               )
             })}
@@ -240,11 +240,11 @@ export default function AiSettingsTab({
         {/* API Key Input */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+            <label className="block text-xs font-semibold uppercase text-neutral-600 tracking-wider">
               API Key
             </label>
             {blog?.hasCustomAiKey && (
-              <span className="text-[11px] font-mono text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
+              <span className="text-[11px] font-mono text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-inner border border-neutral-200">
                 Saved Key Active
               </span>
             )}
@@ -259,13 +259,13 @@ export default function AiSettingsTab({
                   ? blog.aiApiKey || '••••••••••••••••'
                   : 'sk-or-v1-xxxxxxxxxxxxxxxxxxxx'
               }
-              className="w-full rounded-lg border border-zinc-300 py-2 pl-3 pr-20 text-sm font-mono focus:border-purple-600 focus:outline-none"
+              className="w-full rounded-inner border border-neutral-200 py-2 pl-3 pr-20 text-xs font-mono text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
             />
-            <div className="absolute right-2 top-2 flex items-center gap-1 text-zinc-400">
+            <div className="absolute right-2 top-2 flex items-center gap-1 text-neutral-400">
               <button
                 type="button"
                 onClick={() => setShowAiKey(!showAiKey)}
-                className="p-1 hover:text-zinc-600 rounded"
+                className="p-1 hover:text-neutral-600 rounded-inner"
                 title={showAiKey ? 'Hide key' : 'Show key'}
               >
                 {showAiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -274,7 +274,7 @@ export default function AiSettingsTab({
                 <button
                   type="button"
                   onClick={() => setAiApiKey('')}
-                  className="p-1 hover:text-red-600 rounded text-xs font-sans font-medium"
+                  className="p-1 hover:text-red-600 rounded-inner text-xs font-sans font-medium"
                   title="Clear input"
                 >
                   Clear
@@ -282,7 +282,7 @@ export default function AiSettingsTab({
               )}
             </div>
           </div>
-          <p className="text-[11px] text-zinc-500">
+          <p className="text-[11px] text-neutral-500">
             {blog?.hasCustomAiKey
               ? 'A custom key is saved. Leave blank or masked to keep it, or type a new key to update.'
               : 'No custom key set. The blog uses the system environment variable default unless overridden here.'}
@@ -291,7 +291,7 @@ export default function AiSettingsTab({
 
         {/* Model Identifier & Suggestions */}
         <div className="space-y-2">
-          <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+          <label className="block text-xs font-semibold uppercase text-neutral-600 tracking-wider">
             Model Identifier
           </label>
           <input
@@ -299,11 +299,11 @@ export default function AiSettingsTab({
             value={aiModel}
             onChange={(e) => setAiModel(e.target.value)}
             placeholder="google/gemini-2.0-flash-001"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-purple-600 focus:outline-none"
+            className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs font-mono text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
           />
 
           <div className="pt-1">
-            <span className="text-[11px] text-zinc-500 font-medium block mb-1.5">
+            <span className="text-[11px] text-neutral-500 font-medium block mb-1.5">
               Recommended Model Suggestions (click to apply):
             </span>
             <div className="flex flex-wrap gap-2">
@@ -312,14 +312,14 @@ export default function AiSettingsTab({
                   key={item.model}
                   type="button"
                   onClick={() => setAiModel(item.model)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs transition ${
+                  className={`inline-flex items-center gap-1.5 rounded-inner border px-2.5 py-1 text-xs transition ${
                     aiModel === item.model
-                      ? 'border-purple-600 bg-purple-50 text-purple-700 font-semibold'
-                      : 'border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300'
+                      ? 'border-neutral-900 bg-neutral-900 text-white shadow-astryx-low font-semibold'
+                      : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-300'
                   }`}
                 >
                   <span>{item.label}</span>
-                  <span className="text-[10px] text-zinc-400 font-mono">({item.desc})</span>
+                  <span className={`text-[10px] font-mono ${aiModel === item.model ? 'text-neutral-300' : 'text-neutral-400'}`}>({item.desc})</span>
                 </button>
               ))}
             </div>
@@ -328,7 +328,7 @@ export default function AiSettingsTab({
 
         {/* Base URL (Optional) */}
         <div className="space-y-1.5">
-          <label className="block text-xs font-semibold uppercase text-zinc-600 tracking-wider">
+          <label className="block text-xs font-semibold uppercase text-neutral-600 tracking-wider">
             API Base URL (Optional)
           </label>
           <input
@@ -336,20 +336,20 @@ export default function AiSettingsTab({
             value={aiBaseUrl}
             onChange={(e) => setAiBaseUrl(e.target.value)}
             placeholder="https://openrouter.ai/api/v1"
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-purple-600 focus:outline-none"
+            className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs font-mono text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
           />
-          <p className="text-[11px] text-zinc-500">
-            Leave empty to default to OpenRouter gateway (<code className="font-mono text-zinc-700">https://openrouter.ai/api/v1</code>).
+          <p className="text-[11px] text-neutral-500">
+            Leave empty to default to OpenRouter gateway (<code className="font-mono text-neutral-700">https://openrouter.ai/api/v1</code>).
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="pt-4 border-t border-zinc-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="pt-4 border-t border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <button
             type="button"
             disabled={testingAi}
             onClick={handleTestAiConnection}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 disabled:opacity-50 transition"
+            className="inline-flex items-center justify-center gap-1.5 rounded-inner border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-700 shadow-astryx-low hover:bg-neutral-50 disabled:opacity-50 transition"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${testingAi ? 'animate-spin' : ''}`} />
             <span>{testingAi ? 'Testing Live Connection...' : 'Test Connection'}</span>
@@ -361,7 +361,7 @@ export default function AiSettingsTab({
                 type="button"
                 disabled={savingAi}
                 onClick={handleClearCustomAiKey}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 transition"
+                className="inline-flex items-center gap-1.5 rounded-inner border border-red-200 bg-red-50/50 px-3.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 hover:border-red-300 disabled:opacity-50 transition"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>Revert to Default</span>
@@ -371,7 +371,7 @@ export default function AiSettingsTab({
               type="button"
               disabled={savingAi}
               onClick={handleSaveAiSettings}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-inner bg-neutral-900 px-5 py-2 text-xs font-semibold text-white shadow-astryx-low hover:bg-neutral-800 disabled:opacity-50 transition"
             >
               <Save className="h-3.5 w-3.5" />
               <span>{savingAi ? 'Saving...' : 'Save AI Settings'}</span>
@@ -381,13 +381,13 @@ export default function AiSettingsTab({
 
         {/* Feedback Alerts */}
         {aiSaveMessage && (
-          <div className="rounded-lg bg-emerald-50 p-3.5 text-xs text-emerald-800 border border-emerald-200 flex items-center gap-2">
+          <div className="rounded-element bg-emerald-50 p-3.5 text-xs text-emerald-800 border border-emerald-200 shadow-astryx-low flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>{aiSaveMessage}</span>
           </div>
         )}
         {aiSaveError && (
-          <div className="rounded-lg bg-red-50 p-3.5 text-xs text-red-700 border border-red-200 flex items-center gap-2">
+          <div className="rounded-element bg-red-50 p-3.5 text-xs text-red-700 border border-red-200 shadow-astryx-low flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-red-600 shrink-0" />
             <span>{aiSaveError}</span>
           </div>
@@ -396,7 +396,7 @@ export default function AiSettingsTab({
         {/* Live Test Results Alert */}
         {aiTestResult && (
           <div
-            className={`rounded-lg p-4 text-xs font-mono border ${
+            className={`rounded-element p-4 text-xs font-mono border shadow-astryx-low ${
               aiTestResult.success
                 ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                 : 'bg-red-50 text-red-700 border-red-200'
@@ -417,8 +417,8 @@ export default function AiSettingsTab({
             </div>
             <p className="mt-1">{aiTestResult.message || aiTestResult.error}</p>
             {aiTestResult.latencyMs && (
-              <span className="text-[11px] text-zinc-500 block mt-1.5 font-sans">
-                Roundtrip latency: <strong className="font-mono">{aiTestResult.latencyMs}ms</strong> &bull; Tested model: <code className="font-mono text-purple-700">{aiTestResult.model}</code>
+              <span className="text-[11px] text-neutral-500 block mt-1.5 font-sans">
+                Roundtrip latency: <strong className="font-mono">{aiTestResult.latencyMs}ms</strong> &bull; Tested model: <code className="font-mono text-neutral-900">{aiTestResult.model}</code>
               </span>
             )}
           </div>
@@ -426,9 +426,9 @@ export default function AiSettingsTab({
       </div>
 
       {/* OpenRouter Setup Guide Card */}
-      <div className="rounded-xl border border-zinc-200/90 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-4">
+      <div className="rounded-container border border-neutral-200 bg-white p-6 shadow-astryx-low space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-700">
             About OpenRouter & LLM Integration
           </h4>
           <a
@@ -442,14 +442,14 @@ export default function AiSettingsTab({
           </a>
         </div>
 
-        <div className="space-y-3 text-xs text-zinc-600 leading-relaxed">
+        <div className="space-y-3 text-xs text-neutral-600 leading-relaxed">
           <p>
             OpenRouter is a unified AI router providing access to top models from Google, Anthropic, DeepSeek, Meta, and OpenAI under a single API key and billing account.
           </p>
           <p>
             In TopLog, your configured LLM powers:
           </p>
-          <ul className="list-disc pl-5 space-y-1 text-zinc-700">
+          <ul className="list-disc pl-5 space-y-1 text-neutral-700">
             <li><strong>Instant 1-Click Translation:</strong> Translate your posts and metadata across dozens of languages while preserving markdown and HTML formatting.</li>
             <li><strong>Automated SEO Optimization:</strong> Generate search-optimized meta titles, descriptions, and keywords directly inside the post editor.</li>
           </ul>

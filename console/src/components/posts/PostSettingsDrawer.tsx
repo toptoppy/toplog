@@ -76,14 +76,14 @@ export default function PostSettingsDrawer({
   if (!isOpen) return null
 
   return (
-    <aside className="w-full lg:w-80 xl:w-96 shrink-0 rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-5">
-      <div className="flex items-center justify-between pb-3 border-b border-zinc-100">
-        <h3 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">
+    <aside className="w-full lg:w-80 xl:w-96 shrink-0 rounded-container border border-neutral-200/90 bg-white p-5 shadow-astryx-low space-y-5">
+      <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-700">
           Post Settings
         </h3>
         <button
           onClick={onClose}
-          className="text-zinc-400 hover:text-zinc-600 p-1 rounded-md"
+          className="text-neutral-400 hover:text-neutral-600 p-1 rounded-inner hover:bg-neutral-100 transition"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -94,18 +94,18 @@ export default function PostSettingsDrawer({
         <button
           type="button"
           onClick={onOpenSeoPreview}
-          className="w-full flex items-center justify-between p-3 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/70 text-purple-900 transition group text-left shadow-sm"
+          className="w-full flex items-center justify-between p-3 rounded-element border border-neutral-200 bg-neutral-50/80 hover:bg-neutral-100 text-neutral-900 transition group text-left shadow-astryx-low"
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-inner bg-neutral-900 text-white shadow-astryx-low">
               <Globe className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-xs font-bold leading-tight">SEO & Social Preview</div>
-              <div className="text-[10px] text-purple-700/80">Google, Twitter & Facebook cards</div>
+              <div className="text-xs font-semibold leading-tight">SEO & Social Preview</div>
+              <div className="text-[10px] text-neutral-500">Google, Twitter & Facebook cards</div>
             </div>
           </div>
-          <span className="text-[10px] font-semibold text-purple-700 bg-white/80 border border-purple-200 px-2 py-0.5 rounded-md group-hover:bg-purple-600 group-hover:text-white transition">
+          <span className="text-[10px] font-semibold text-neutral-700 bg-white border border-neutral-200 px-2 py-0.5 rounded-inner group-hover:bg-neutral-900 group-hover:text-white transition">
             Preview
           </span>
         </button>
@@ -113,11 +113,11 @@ export default function PostSettingsDrawer({
 
       {/* Featured Image */}
       <div>
-        <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500 mb-1.5">
+        <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-neutral-500 mb-1.5">
           Featured Cover Image
         </label>
         {featuredImageUrl ? (
-          <div className="relative group mb-2 rounded-lg overflow-hidden border border-zinc-200">
+          <div className="relative group mb-2 rounded-element overflow-hidden border border-neutral-200">
             <img
               src={featuredImageUrl}
               alt="Featured"
@@ -125,7 +125,7 @@ export default function PostSettingsDrawer({
             />
             <button
               onClick={() => setFeaturedImageUrl('')}
-              className="absolute top-2 right-2 rounded-md bg-black/60 p-1 text-white hover:bg-black transition"
+              className="absolute top-2 right-2 rounded-inner bg-black/60 p-1 text-white hover:bg-black transition"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -138,7 +138,7 @@ export default function PostSettingsDrawer({
             placeholder="https://... or upload"
             value={featuredImageUrl}
             onChange={(e) => setFeaturedImageUrl(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="w-full rounded-inner border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
           />
           <input
             type="file"
@@ -150,7 +150,7 @@ export default function PostSettingsDrawer({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition"
+            className="rounded-inner border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 transition"
             title="Upload image from device"
           >
             <ImageIcon className="h-4 w-4" />
@@ -161,7 +161,7 @@ export default function PostSettingsDrawer({
       {/* Meta Description / Excerpt */}
       <div>
         <div className="flex items-center justify-between mb-1.5">
-          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500">
+          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-neutral-500">
             Meta Description ({activeLang.toUpperCase()})
           </label>
           <div className="flex items-center gap-2">
@@ -169,12 +169,12 @@ export default function PostSettingsDrawer({
               type="button"
               onClick={handleGenerateSeo}
               disabled={generatingSeo}
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 hover:text-purple-800 disabled:opacity-50"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
             >
-              <Sparkles className="h-3 w-3 text-purple-600" />
+              <Sparkles className="h-3 w-3 text-blue-600" />
               {generatingSeo ? 'Generating...' : 'AI Generate'}
             </button>
-            <span className={`text-[10px] font-mono ${description.length > 160 ? 'text-red-600 font-bold' : 'text-zinc-400'}`}>
+            <span className={`text-[10px] font-mono ${description.length > 160 ? 'text-red-600 font-bold' : 'text-neutral-400'}`}>
               {description.length} / 160
             </span>
           </div>
@@ -184,48 +184,48 @@ export default function PostSettingsDrawer({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="SEO summary and article excerpt..."
-          className="w-full rounded-lg border border-zinc-200 p-2 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+          className="w-full rounded-inner border border-neutral-200 p-2 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
         />
       </div>
 
       {/* Canonical URL Override */}
       {setCanonicalUrl && (
         <div>
-          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500 mb-1.5 flex items-center justify-between">
+          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-neutral-500 mb-1.5 flex items-center justify-between">
             <span className="flex items-center gap-1">
               <LinkIcon className="h-3 w-3" />
               <span>Canonical URL</span>
             </span>
-            <span className="text-[10px] font-mono text-zinc-400">Optional</span>
+            <span className="text-[10px] font-mono text-neutral-400">Optional</span>
           </label>
           <input
             type="url"
             value={canonicalUrl || ''}
             onChange={(e) => setCanonicalUrl(e.target.value)}
             placeholder="https://original-source.com/post"
-            className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="w-full rounded-inner border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
           />
         </div>
       )}
 
       {/* AI SEO Suggestions */}
       {seoSuggestions && (
-        <div className="rounded-lg bg-purple-50/80 border border-purple-200/80 p-3 space-y-2.5">
-          <div className="flex items-center justify-between text-xs font-bold text-purple-950">
+        <div className="rounded-element bg-neutral-50 border border-neutral-200 p-3 space-y-2.5">
+          <div className="flex items-center justify-between text-xs font-semibold text-neutral-900">
             <span className="flex items-center gap-1">
-              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> AI Suggestions
+              <Sparkles className="h-3.5 w-3.5 text-blue-600" /> AI Suggestions
             </span>
             <button
               type="button"
               onClick={() => setSeoSuggestions(null)}
-              className="text-zinc-400 hover:text-zinc-600 text-[10px]"
+              className="text-neutral-400 hover:text-neutral-600 text-[10px]"
             >
               Dismiss
             </button>
           </div>
           {seoSuggestions.titles && seoSuggestions.titles.length > 0 && (
             <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-700 block mb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 block mb-1">
                 Alternative Titles (Click to Apply)
               </span>
               <div className="space-y-1">
@@ -234,7 +234,7 @@ export default function PostSettingsDrawer({
                     key={idx}
                     type="button"
                     onClick={() => setTitle(altTitle)}
-                    className="w-full text-left text-xs text-zinc-900 hover:text-purple-950 bg-white hover:bg-purple-50 border border-zinc-200 hover:border-purple-300 rounded px-2 py-1 transition truncate block"
+                    className="w-full text-left text-xs text-neutral-900 hover:text-blue-900 bg-white hover:bg-neutral-100 border border-neutral-200 hover:border-neutral-300 rounded-inner px-2 py-1 transition truncate block"
                     title={altTitle}
                   >
                     {altTitle}
@@ -245,14 +245,14 @@ export default function PostSettingsDrawer({
           )}
           {seoSuggestions.tags && seoSuggestions.tags.length > 0 && (
             <div>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-purple-700 block mb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 block mb-1">
                 Suggested Tags
               </span>
               <div className="flex flex-wrap gap-1">
                 {seoSuggestions.tags.map((tag, idx) => (
                   <span
                     key={idx}
-                    className="inline-block rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800"
+                    className="inline-block rounded-inner bg-neutral-200/80 px-1.5 py-0.5 text-[10px] font-medium text-neutral-800"
                   >
                     #{tag}
                   </span>
@@ -265,21 +265,21 @@ export default function PostSettingsDrawer({
 
       {/* Publication Date & Scheduling */}
       {setPublishedAt && (
-        <div className="space-y-2 pt-3 border-t border-zinc-100">
-          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-zinc-500 flex items-center justify-between">
+        <div className="space-y-2 pt-3 border-t border-neutral-100">
+          <label className="block text-[11px] font-mono font-medium uppercase tracking-wider text-neutral-500 flex items-center justify-between">
             <span className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />
               <span>Publish Date</span>
             </span>
-            <span className="text-[10px] font-mono text-zinc-400">
+            <span className="text-[10px] font-mono text-neutral-400">
               {postStatus === 'SCHEDULED' ? 'Scheduled' : 'Backdating'}
             </span>
           </label>
 
           {postStatus === 'SCHEDULED' && scheduledAt ? (
-            <div className="rounded-lg bg-purple-50 border border-purple-200 p-2 text-xs text-purple-900">
+            <div className="rounded-element bg-neutral-50 border border-neutral-200 p-2 text-xs text-neutral-900">
               <div className="font-semibold">Scheduled for:</div>
-              <div className="font-mono text-[11px] text-purple-700 mt-0.5">
+              <div className="font-mono text-[11px] text-neutral-600 mt-0.5">
                 {new Date(scheduledAt).toLocaleString()}
               </div>
             </div>
@@ -299,9 +299,9 @@ export default function PostSettingsDrawer({
                     setPublishedAt(null)
                   }
                 }}
-                className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-900 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+                className="w-full rounded-inner border border-neutral-200 px-2.5 py-1.5 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
               />
-              <p className="text-[10px] text-zinc-400 mt-1">
+              <p className="text-[10px] text-neutral-400 mt-1">
                 Customize publish date or backdate imported stories.
               </p>
             </div>
@@ -310,15 +310,15 @@ export default function PostSettingsDrawer({
       )}
 
       {/* Visibility & Flags */}
-      <div className="space-y-2.5 pt-3 border-t border-zinc-100">
+      <div className="space-y-2.5 pt-3 border-t border-neutral-100">
         <label className="flex items-center gap-2 cursor-pointer select-none">
           <input
             type="checkbox"
             checked={isFeatured}
             onChange={(e) => setIsFeatured(e.target.checked)}
-            className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            className="rounded-inner border-neutral-300 text-neutral-900 focus:ring-neutral-900"
           />
-          <span className="text-xs font-medium text-zinc-700 flex items-center gap-1.5">
+          <span className="text-xs font-medium text-neutral-700 flex items-center gap-1.5">
             <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" /> Featured Article
           </span>
         </label>
@@ -328,18 +328,18 @@ export default function PostSettingsDrawer({
             type="checkbox"
             checked={isPage}
             onChange={(e) => setIsPage(e.target.checked)}
-            className="rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
+            className="rounded-inner border-neutral-300 text-neutral-900 focus:ring-neutral-900"
           />
-          <span className="text-xs font-medium text-zinc-700">Static Page (No dates)</span>
+          <span className="text-xs font-medium text-neutral-700">Static Page (No dates)</span>
         </label>
       </div>
 
       {/* Danger Zone */}
-      <div className="pt-4 border-t border-zinc-100">
+      <div className="pt-4 border-t border-neutral-100">
         <button
           type="button"
           onClick={handleDeletePost}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
+          className="w-full inline-flex items-center justify-center gap-1.5 rounded-inner border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 shadow-astryx-low transition"
         >
           <Trash2 className="h-3.5 w-3.5" />
           <span>Delete Post</span>

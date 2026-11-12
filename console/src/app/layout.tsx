@@ -13,8 +13,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="min-h-full bg-[#fcfcfd] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
+    <html lang="en" data-astryx-theme="neutral" className="h-full antialiased">
+      <body className="min-h-full bg-[#f4f4f6] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

@@ -71,10 +71,10 @@ export default function GeneralDomainTab({
   const isMisconfigured = blog.domainDnsStatus === 'MISCONFIGURED' || (domainVerifyResult && !domainVerifyResult.verified)
 
   return (
-    <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div className="space-y-6 rounded-container border border-neutral-200 bg-white p-6 shadow-astryx-low">
       {/* Title */}
       <div>
-        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+        <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1">
           Blog Title
         </label>
         <input
@@ -82,13 +82,13 @@ export default function GeneralDomainTab({
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+          className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
         />
       </div>
 
       {/* Description */}
       <div>
-        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+        <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1">
           Tagline / Description
         </label>
         <textarea
@@ -96,38 +96,38 @@ export default function GeneralDomainTab({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="A high-performance engineering publication"
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+          className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
         />
       </div>
 
       {/* Default Assigned Subdomain */}
       <div>
-        <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+        <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1">
           Assigned Platform Subdomain
         </label>
-        <div className="flex rounded-lg border border-slate-200 bg-slate-50 overflow-hidden text-sm text-slate-600">
+        <div className="flex rounded-inner border border-neutral-200 bg-neutral-50 overflow-hidden text-xs text-neutral-700">
           <span className="px-3 py-2 font-mono font-medium">{blog.subdomain}</span>
-          <span className="px-3 py-2 text-slate-400 bg-slate-100 border-l border-slate-200">
+          <span className="px-3 py-2 text-neutral-400 bg-neutral-100 border-l border-neutral-200">
             .localhost
           </span>
         </div>
       </div>
 
       {/* Custom Domain & Auto-SSL Section */}
-      <div className="border-t border-slate-100 pt-5 space-y-4">
+      <div className="border-t border-neutral-100 pt-5 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <label className="block text-xs font-semibold uppercase text-slate-700">
+            <label className="block text-xs font-semibold uppercase text-neutral-800">
               Custom Domain & Auto-SSL
             </label>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-neutral-500 mt-0.5">
               Connect your own apex or subdomain with automated Caddy on-demand TLS encryption.
             </p>
           </div>
 
           {blog.customDomain && (
             <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
+              className={`inline-flex items-center gap-1.5 rounded-element px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
                 isVerified
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : isMisconfigured
@@ -157,26 +157,26 @@ export default function GeneralDomainTab({
 
         {/* Input Field */}
         <div className="relative">
-          <Globe className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+          <Globe className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <input
             type="text"
             value={customDomain}
             onChange={(e) => setCustomDomain(e.target.value.toLowerCase())}
             placeholder="blog.mycompany.com"
-            className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-blue-600 focus:outline-none font-mono"
+            className="w-full rounded-inner border border-neutral-200 py-2 pl-9 pr-3 text-xs text-neutral-900 focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 font-mono"
           />
         </div>
 
         {/* Active Custom Domain Setup Panel */}
         {blog.customDomain && (
-          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 space-y-4">
+          <div className="rounded-element border border-neutral-200 bg-neutral-50/70 p-4 space-y-4 shadow-astryx-low">
             {/* DNS Instructions Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-semibold text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
                   <span>Required DNS Configuration</span>
                 </h4>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-[11px] text-neutral-500 mt-0.5">
                   Add this CNAME record in your DNS provider (e.g., Cloudflare, Namecheap, Route53, GoDaddy).
                 </p>
               </div>
@@ -186,9 +186,9 @@ export default function GeneralDomainTab({
                   type="button"
                   disabled={verifyingDomain}
                   onClick={handleVerifyDomain}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-100 disabled:opacity-50 transition"
+                  className="inline-flex items-center gap-1.5 rounded-inner border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-astryx-low hover:bg-neutral-50 disabled:opacity-50 transition"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${verifyingDomain ? 'animate-spin text-blue-600' : 'text-slate-500'}`} />
+                  <RefreshCw className={`h-3.5 w-3.5 ${verifyingDomain ? 'animate-spin text-neutral-900' : 'text-neutral-500'}`} />
                   {verifyingDomain ? 'Resolving DNS...' : 'Verify DNS Now'}
                 </button>
 
@@ -197,7 +197,7 @@ export default function GeneralDomainTab({
                     href={`https://${blog.customDomain}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition"
+                    className="inline-flex items-center gap-1 rounded-inner bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-astryx-low hover:bg-emerald-700 transition"
                   >
                     <span>Visit Live Site</span>
                     <ExternalLink className="h-3 w-3" />
@@ -207,9 +207,9 @@ export default function GeneralDomainTab({
             </div>
 
             {/* DNS Record Table */}
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-2xs">
-              <table className="w-full text-left text-xs text-slate-600 font-mono">
-                <thead className="bg-slate-100/70 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
+            <div className="overflow-x-auto rounded-inner border border-neutral-200 bg-white shadow-astryx-low">
+              <table className="w-full text-left text-xs text-neutral-600 font-mono">
+                <thead className="bg-neutral-100/70 text-[10px] uppercase font-bold text-neutral-500 border-b border-neutral-200">
                   <tr>
                     <th className="px-3.5 py-2">Type</th>
                     <th className="px-3.5 py-2">Host / Name</th>
@@ -218,21 +218,21 @@ export default function GeneralDomainTab({
                     <th className="px-3.5 py-2 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-neutral-100">
                   <tr>
-                    <td className="px-3.5 py-2.5 font-bold text-slate-800">CNAME</td>
-                    <td className="px-3.5 py-2.5 text-slate-700">
+                    <td className="px-3.5 py-2.5 font-bold text-neutral-900">CNAME</td>
+                    <td className="px-3.5 py-2.5 text-neutral-700">
                       {blog.customDomain.includes('.')
                         ? blog.customDomain.substring(0, blog.customDomain.indexOf('.'))
                         : '@'}
                     </td>
-                    <td className="px-3.5 py-2.5 text-blue-700 font-semibold">{expectedCnameTarget}</td>
-                    <td className="px-3.5 py-2.5 text-slate-500">Auto (300)</td>
+                    <td className="px-3.5 py-2.5 text-neutral-900 font-semibold">{expectedCnameTarget}</td>
+                    <td className="px-3.5 py-2.5 text-neutral-500">Auto (300)</td>
                     <td className="px-3.5 py-2.5 text-right">
                       <button
                         type="button"
                         onClick={() => copyToClipboard(expectedCnameTarget)}
-                        className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-sans font-medium text-slate-600 hover:bg-slate-100 border border-slate-200 transition"
+                        className="inline-flex items-center gap-1 rounded-inner px-2 py-0.5 text-[11px] font-sans font-medium text-neutral-600 hover:bg-neutral-100 border border-neutral-200 transition"
                       >
                         {copiedTarget ? (
                           <>
@@ -241,7 +241,7 @@ export default function GeneralDomainTab({
                           </>
                         ) : (
                           <>
-                            <Copy className="h-3 w-3 text-slate-400" />
+                            <Copy className="h-3 w-3 text-neutral-400" />
                             <span>Copy</span>
                           </>
                         )}
@@ -254,7 +254,7 @@ export default function GeneralDomainTab({
 
             {/* SSL & DNS Diagnostics Banner */}
             <div
-              className={`rounded-xl border p-3 text-xs space-y-1.5 ${
+              className={`rounded-element border p-3 text-xs space-y-1.5 ${
                 isVerified
                   ? 'border-emerald-200 bg-emerald-50/70 text-emerald-900'
                   : isMisconfigured
@@ -276,7 +276,7 @@ export default function GeneralDomainTab({
               </div>
 
               {domainVerifyResult && (
-                <div className="pt-1 text-[11px] border-t border-slate-200/50 space-y-0.5">
+                <div className="pt-1 text-[11px] border-t border-neutral-200/50 space-y-0.5">
                   <p className="font-medium">{domainVerifyResult.message}</p>
                   {domainVerifyResult.detectedIps.length > 0 && (
                     <p className="font-mono opacity-80">
@@ -293,14 +293,14 @@ export default function GeneralDomainTab({
       {/* Language & Theme Selectors */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
         <div>
-          <label htmlFor="defaultLanguageSelect" className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+          <label htmlFor="defaultLanguageSelect" className="block text-xs font-semibold uppercase text-neutral-700 mb-1">
             Default Language
           </label>
           <select
             id="defaultLanguageSelect"
             value={defaultLanguage}
             onChange={(e) => setDefaultLanguage(e.target.value.toLowerCase())}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none bg-white font-medium text-slate-900"
+            className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 bg-white font-medium text-neutral-900"
           >
             {SUPPORTED_LANGUAGES.map((lang) => (
               <option key={lang.code} value={lang.code}>
@@ -311,13 +311,13 @@ export default function GeneralDomainTab({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold uppercase text-slate-600 mb-1">
+          <label className="block text-xs font-semibold uppercase text-neutral-700 mb-1">
             Active Theme
           </label>
           <select
             value={themeName}
             onChange={(e) => setThemeName(e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none bg-white"
+            className="w-full rounded-inner border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 bg-white"
           >
             <option value="default">Default Clean Theme (Pebble)</option>
           </select>
@@ -325,14 +325,14 @@ export default function GeneralDomainTab({
       </div>
 
       {/* Archive Backup & Data Export */}
-      <div className="pt-5 border-t border-slate-100">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+      <div className="pt-5 border-t border-neutral-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-element border border-neutral-200 bg-neutral-50/70 p-4 shadow-astryx-low">
           <div>
-            <h4 className="text-xs font-bold uppercase text-slate-800 flex items-center gap-1.5">
-              <Archive className="h-4 w-4 text-blue-600" />
+            <h4 className="text-xs font-semibold uppercase text-neutral-900 flex items-center gap-1.5">
+              <Archive className="h-4 w-4 text-neutral-700" />
               Full Blog Backup & Data Export (.zip)
             </h4>
-            <p className="text-xs text-slate-600 mt-1 max-w-lg leading-relaxed">
+            <p className="text-xs text-neutral-500 mt-1 max-w-lg leading-relaxed">
               Download an offline backup archive containing all posts as Markdown files with YAML frontmatter, tags metadata, reader comments, and email subscribers CSV.
             </p>
           </div>
@@ -340,9 +340,9 @@ export default function GeneralDomainTab({
             type="button"
             disabled={exportingArchive}
             onClick={handleExportArchive}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition shrink-0"
+            className="inline-flex items-center justify-center gap-2 rounded-inner border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-700 shadow-astryx-low hover:bg-neutral-50 disabled:opacity-50 transition shrink-0"
           >
-            <Download className={`h-4 w-4 ${exportingArchive ? 'animate-pulse text-blue-600' : 'text-slate-500'}`} />
+            <Download className={`h-4 w-4 ${exportingArchive ? 'animate-pulse text-neutral-900' : 'text-neutral-500'}`} />
             {exportingArchive ? 'Generating Archive...' : 'Download Full Archive (.zip)'}
           </button>
         </div>

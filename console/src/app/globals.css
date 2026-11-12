@@ -1,10 +1,19 @@
+@import '@astryxdesign/theme-neutral/fonts.css';
+@import '@astryxdesign/theme-neutral/theme.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --astryx-canvas: #f4f4f6;
+    --astryx-card: #ffffff;
+    --astryx-border: rgba(0, 0, 0, 0.08);
+  }
+
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    @apply bg-[#f4f4f6] text-zinc-900 antialiased font-sans selection:bg-zinc-900 selection:text-white;
   }
 }
 

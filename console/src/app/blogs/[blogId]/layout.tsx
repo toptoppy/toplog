@@ -12,6 +12,7 @@ import {
   Image as ImageIcon,
   Settings,
   ChevronLeft,
+  ChevronRight,
   ExternalLink,
   Globe,
   LayoutDashboard,
@@ -24,6 +25,7 @@ import {
   Shield,
   Layers,
   Sparkles,
+  Plus,
 } from 'lucide-react'
 
 export default function BlogLayout({
@@ -104,6 +106,13 @@ export default function BlogLayout({
     },
   ]
 
+  const allNavItems = navSections.flatMap((s) => s.items)
+  const activeNavItem = allNavItems.find((item) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href)
+  )
+  const isEditingPost = pathname.includes('/posts/') && pathname !== `/blogs/${blogId}/posts/new`
+  const isNewPost = pathname === `/blogs/${blogId}/posts/new`
+
   if (authLoading || (loading && !blog)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-950">
@@ -116,8 +125,8 @@ export default function BlogLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-[#fcfcfd]">
-      {/* Sleek Linear/Vercel Obsidian Sidebar */}
+    <div className="flex min-h-screen bg-[#f4f4f6]">
+      {/* Astryx Obsidian Navigation Rail */}
       <aside className="w-64 bg-[#09090b] border-r border-zinc-800/80 flex flex-col justify-between fixed inset-y-0 z-20 select-none">
         <div className="flex flex-col h-full overflow-y-auto">
           {/* Brand Header */}
@@ -127,21 +136,21 @@ export default function BlogLayout({
                 href="/blogs"
                 className="group flex items-center gap-2 text-xs font-medium text-zinc-400 hover:text-white transition"
               >
-                <div className="flex h-5 w-5 items-center justify-center rounded bg-zinc-800 border border-zinc-700/60 group-hover:border-zinc-500">
+                <div className="flex h-5 w-5 items-center justify-center rounded-inner bg-zinc-800 border border-zinc-700/60 group-hover:border-zinc-500">
                   <ChevronLeft className="h-3 w-3" />
                 </div>
                 <span>All Blogs</span>
               </Link>
               <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-mono font-medium text-zinc-400">
                 <Sparkles className="h-3 w-3 text-blue-400" />
-                v1.0
+                Astryx
               </div>
             </div>
 
             {/* Current Active Tenant Card */}
-            <div className="rounded-lg bg-zinc-900/80 border border-zinc-800/90 p-2.5">
+            <div className="rounded-element bg-zinc-900/80 border border-zinc-800/90 p-2.5">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-sm shadow-sm">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-inner bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold text-sm shadow-sm">
                   {blog?.title?.charAt(0).toUpperCase() || 'T'}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -169,7 +178,7 @@ export default function BlogLayout({
           <nav className="flex-1 p-3 space-y-5">
             {navSections.map((section) => (
               <div key={section.title}>
-                <div className="px-3 mb-1.5 text-[10px] font-mono font-semibold tracking-wider text-zinc-400 uppercase">
+                <div className="px-3 mb-1.5 text-[10px] font-mono font-semibold tracking-wider text-zinc-500 uppercase">
                   {section.title}
                 </div>
                 <div className="space-y-0.5">
@@ -182,10 +191,10 @@ export default function BlogLayout({
                       <Link
                         key={item.href}
                         href={item.href}
-                        className={`group relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-xs font-medium transition-all ${
+                        className={`group relative flex items-center gap-2.5 rounded-element px-3 py-1.5 text-xs font-medium transition-all ${
                           active
                             ? 'bg-zinc-800/90 text-white shadow-sm ring-1 ring-zinc-700/60 font-semibold'
-                            : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200'
+                            : 'text-zinc-400 hover:bg-zinc-900/80 hover:text-zinc-200'
                         }`}
                       >
                         <Icon
@@ -207,7 +216,7 @@ export default function BlogLayout({
 
           {/* User Profile Footer */}
           <div className="p-3 border-t border-zinc-800/80 bg-zinc-950/40">
-            <div className="flex items-center justify-between p-1.5 rounded-lg hover:bg-zinc-900/60 transition">
+            <div className="flex items-center justify-between p-1.5 rounded-element hover:bg-zinc-900/60 transition">
               <div className="flex items-center gap-2.5 min-w-0 pr-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700/60 text-xs font-medium text-zinc-200">
                   {user?.name?.charAt(0).toUpperCase() || 'U'}
@@ -224,7 +233,7 @@ export default function BlogLayout({
               <button
                 onClick={logout}
                 title="Sign Out"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition"
+                className="flex h-7 w-7 items-center justify-center rounded-inner text-zinc-400 hover:bg-zinc-800 hover:text-red-400 transition"
               >
                 <LogOut className="h-3.5 w-3.5" />
               </button>
@@ -233,9 +242,83 @@ export default function BlogLayout({
         </div>
       </aside>
 
-      {/* Main Content Canvas */}
-      <main className="flex-1 pl-64 min-h-screen">
-        {children}
+      {/* Main Content Canvas with Astryx App Shell Top Navigation */}
+      <main className="flex-1 pl-64 min-h-screen bg-[#f4f4f6] flex flex-col">
+        {/* Astryx Top Header Navigation Bar */}
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-zinc-200/80 bg-white/85 px-8 backdrop-blur-md">
+          {/* Breadcrumbs */}
+          <nav aria-label="Breadcrumbs" className="flex items-center gap-2 text-xs">
+            <Link
+              href="/blogs"
+              className="text-zinc-500 hover:text-zinc-900 transition font-medium"
+            >
+              Blogs
+            </Link>
+            <ChevronRight className="h-3 w-3 text-zinc-400 shrink-0" />
+            <Link
+              href={`/blogs/${blogId}`}
+              className="font-medium text-zinc-700 hover:text-zinc-900 truncate max-w-[180px]"
+            >
+              {blog?.title || 'Blog'}
+            </Link>
+            {activeNavItem && activeNavItem.label !== 'Overview' && (
+              <>
+                <ChevronRight className="h-3 w-3 text-zinc-400 shrink-0" />
+                <Link
+                  href={activeNavItem.href}
+                  className={`font-semibold ${
+                    isEditingPost || isNewPost
+                      ? 'text-zinc-500 hover:text-zinc-900'
+                      : 'text-zinc-900'
+                  }`}
+                >
+                  {activeNavItem.label}
+                </Link>
+              </>
+            )}
+            {isNewPost && (
+              <>
+                <ChevronRight className="h-3 w-3 text-zinc-400 shrink-0" />
+                <span className="font-semibold text-zinc-900">New Post</span>
+              </>
+            )}
+            {isEditingPost && (
+              <>
+                <ChevronRight className="h-3 w-3 text-zinc-400 shrink-0" />
+                <span className="font-semibold text-zinc-900">Editor</span>
+              </>
+            )}
+          </nav>
+
+          {/* Quick Header Actions */}
+          <div className="flex items-center gap-2.5">
+            {publicUrl && (
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-element border border-zinc-200 bg-white text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:border-zinc-300 shadow-astryx-low transition"
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Visit Site</span>
+                <ExternalLink className="h-3 w-3 text-zinc-400" />
+              </a>
+            )}
+            {!pathname.includes('/posts/new') && (
+              <Link
+                href={`/blogs/${blogId}/posts/new`}
+                className="inline-flex items-center gap-1.5 rounded-element bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white shadow-astryx-low hover:bg-zinc-800 transition"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>New Post</span>
+              </Link>
+            )}
+          </div>
+        </header>
+
+        <div className="flex-1">
+          {children}
+        </div>
       </main>
     </div>
   )

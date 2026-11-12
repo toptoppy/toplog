@@ -11,6 +11,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@astryxdesign/theme-neutral": "^0.7.14",
     "@tiptap/core": "^3.32.1",
     "@tiptap/extension-bubble-menu": "^3.32.2",
     "@tiptap/extension-image": "^3.32.1",

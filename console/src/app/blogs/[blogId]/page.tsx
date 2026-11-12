@@ -132,15 +132,15 @@ export default function BlogOverviewPage() {
         </div>
       </div>
 
-      {/* Metric Cards - Linear Style */}
+      {/* Metric Cards - Astryx Stat Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {/* Total Posts */}
-        <div className="group rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 transition">
+        <div className="group rounded-container border border-zinc-200/90 bg-white p-5 shadow-astryx-low hover:border-zinc-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-wider">
               Total Posts
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80 transition">
+            <div className="flex h-7 w-7 items-center justify-center rounded-inner bg-zinc-100 text-zinc-600 group-hover:bg-zinc-200/80 transition shadow-astryx-low">
               <FileText className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -151,12 +151,12 @@ export default function BlogOverviewPage() {
         </div>
 
         {/* Published */}
-        <div className="group rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 transition">
+        <div className="group rounded-container border border-zinc-200/90 bg-white p-5 shadow-astryx-low hover:border-zinc-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-wider">
               Published
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition">
+            <div className="flex h-7 w-7 items-center justify-center rounded-inner bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition shadow-astryx-low">
               <CheckCircle2 className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -170,12 +170,12 @@ export default function BlogOverviewPage() {
         </div>
 
         {/* Drafts */}
-        <div className="group rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 transition">
+        <div className="group rounded-container border border-zinc-200/90 bg-white p-5 shadow-astryx-low hover:border-zinc-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-wider">
               In Draft
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition">
+            <div className="flex h-7 w-7 items-center justify-center rounded-inner bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition shadow-astryx-low">
               <FileEdit className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -186,12 +186,12 @@ export default function BlogOverviewPage() {
         </div>
 
         {/* Scheduled / Status */}
-        <div className="group rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] hover:border-zinc-300 transition">
+        <div className="group rounded-container border border-zinc-200/90 bg-white p-5 shadow-astryx-low hover:border-zinc-300 transition">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono font-medium text-zinc-400 uppercase tracking-wider">
               Scheduled
             </span>
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition">
+            <div className="flex h-7 w-7 items-center justify-center rounded-inner bg-purple-50 text-purple-600 group-hover:bg-purple-100 transition shadow-astryx-low">
               <Clock className="h-3.5 w-3.5" />
             </div>
           </div>
@@ -203,9 +203,9 @@ export default function BlogOverviewPage() {
       </div>
 
       {/* Quick Info & Health Banner */}
-      <div className="rounded-xl border border-zinc-200/90 bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800 p-5 text-white shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="rounded-container border border-zinc-800 bg-[#121215] p-5 text-white shadow-astryx-med flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/10 border border-white/15 text-blue-400">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-element bg-white/10 border border-white/15 text-blue-400">
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
@@ -220,7 +220,7 @@ export default function BlogOverviewPage() {
         <div className="flex items-center gap-3">
           <Link
             href={`/blogs/${blogId}/analytics`}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/20 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner bg-white/10 px-3 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/20 transition shadow-astryx-low"
           >
             <span>View Analytics</span>
             <ArrowRight className="h-3.5 w-3.5" />
@@ -229,7 +229,7 @@ export default function BlogOverviewPage() {
       </div>
 
       {/* Recent Posts Section */}
-      <div className="rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="rounded-container border border-zinc-200/90 bg-white shadow-astryx-low overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 bg-zinc-50/60">
           <div className="flex items-center gap-2">
             <h2 className="text-xs font-mono font-semibold uppercase tracking-wider text-zinc-700">

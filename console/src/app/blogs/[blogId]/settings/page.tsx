@@ -269,77 +269,77 @@ export default function BlogSettingsPage() {
   }
 
   return (
-    <div className="w-full p-8 space-y-6">
+    <div className="w-full max-w-5xl mx-auto p-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Blog Settings</h1>
-        <p className="text-sm text-slate-500 mt-1">
+        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Blog Settings</h1>
+        <p className="text-xs text-neutral-500 mt-1">
           Customize your domain, theme branding, typography, and inject tracking codes.
         </p>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200">
+        <div className="rounded-element bg-red-50 p-4 text-xs font-medium text-red-600 border border-red-200 shadow-astryx-low">
           {error}
         </div>
       )}
       {message && (
-        <div className="rounded-lg bg-emerald-50 p-4 text-sm text-emerald-700 border border-emerald-200 flex items-center gap-2">
+        <div className="rounded-element bg-emerald-50 p-4 text-xs font-medium text-emerald-700 border border-emerald-200 shadow-astryx-low flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4" />
           {message}
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 gap-2">
+      {/* Astryx Segmented Tabs */}
+      <div className="flex items-center gap-1.5 p-1 rounded-container bg-neutral-200/60 border border-neutral-200/80 w-fit">
         <button
           type="button"
           onClick={() => setActiveTab('general')}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-element text-xs font-semibold transition ${
             activeTab === 'general'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-neutral-900 shadow-astryx-low'
+              : 'text-neutral-600 hover:text-neutral-900'
           }`}
         >
-          <SettingsIcon className="h-4 w-4" />
+          <SettingsIcon className="h-3.5 w-3.5" />
           General & Domain
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('branding')}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-element text-xs font-semibold transition ${
             activeTab === 'branding'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-neutral-900 shadow-astryx-low'
+              : 'text-neutral-600 hover:text-neutral-900'
           }`}
         >
-          <Palette className="h-4 w-4" />
+          <Palette className="h-3.5 w-3.5" />
           Branding & Appearance
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('code')}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-element text-xs font-semibold transition ${
             activeTab === 'code'
-              ? 'border-blue-600 text-blue-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-neutral-900 shadow-astryx-low'
+              : 'text-neutral-600 hover:text-neutral-900'
           }`}
         >
-          <Code2 className="h-4 w-4" />
+          <Code2 className="h-3.5 w-3.5" />
           Code Injection
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('ai')}
-          className={`inline-flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+          className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-element text-xs font-semibold transition ${
             activeTab === 'ai'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
+              ? 'bg-white text-neutral-900 shadow-astryx-low'
+              : 'text-neutral-600 hover:text-neutral-900'
           }`}
         >
-          <Sparkles className="h-4 w-4 text-purple-600" />
+          <Sparkles className="h-3.5 w-3.5 text-blue-600" />
           AI & OpenRouter
         </button>
       </div>
@@ -426,7 +426,7 @@ export default function BlogSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
+              className="inline-flex items-center gap-2 rounded-inner bg-neutral-900 px-5 py-2 text-xs font-semibold text-white shadow-astryx-low hover:bg-neutral-800 active:bg-black disabled:opacity-50 transition"
             >
               <Save className="h-4 w-4" />
               {saving ? 'Saving...' : 'Save Settings'}

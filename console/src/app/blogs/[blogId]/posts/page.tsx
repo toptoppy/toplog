@@ -410,15 +410,15 @@ export default function PostsListPage() {
       )}
 
       {/* Bilingual Translation Progress Widget */}
-      <div className="rounded-xl border border-zinc-200/80 bg-gradient-to-r from-zinc-50/70 via-white to-zinc-50/40 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
-            <Languages className="h-4.5 w-4.5" />
+      <div className="rounded-container border border-zinc-200/80 bg-white p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-astryx-low">
+        <div className="flex items-center gap-3.5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-element bg-zinc-100 text-zinc-800 border border-zinc-200/80 shrink-0 shadow-astryx-low">
+            <Languages className="h-5 w-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-zinc-900">Bilingual Translation Health</span>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
+              <span className="font-semibold text-zinc-900 text-sm">Bilingual Translation Health</span>
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200/60 font-semibold">
                 {coveragePercent}% Translated
               </span>
             </div>
@@ -433,10 +433,10 @@ export default function PostsListPage() {
           <button
             type="button"
             onClick={() => setTranslationFilter('ALL')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+            className={`px-3 py-1.5 rounded-inner text-xs font-medium transition ${
               translationFilter === 'ALL'
-                ? 'bg-zinc-900 text-white shadow-sm font-semibold'
-                : 'bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:border-zinc-300'
+                ? 'bg-zinc-900 text-white shadow-astryx-low font-semibold'
+                : 'bg-zinc-50 border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:border-zinc-300'
             }`}
           >
             All ({translationStats.total})
@@ -444,23 +444,23 @@ export default function PostsListPage() {
           <button
             type="button"
             onClick={() => setTranslationFilter('COMPLETE')}
-            className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+            className={`px-3 py-1.5 rounded-inner text-xs font-medium transition flex items-center gap-1.5 ${
               translationFilter === 'COMPLETE'
-                ? 'bg-emerald-600 text-white shadow-sm font-semibold'
-                : 'bg-white border border-zinc-200 text-emerald-700 hover:border-emerald-300'
+                ? 'bg-emerald-600 text-white shadow-astryx-low font-semibold'
+                : 'bg-zinc-50 border border-zinc-200 text-emerald-700 hover:border-emerald-300'
             }`}
           >
-            <CheckCircle2 className="h-3 w-3" />
+            <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Complete ({translationStats.fullyTranslated})</span>
           </button>
           {translationStats.missingTh > 0 && (
             <button
               type="button"
               onClick={() => setTranslationFilter('MISSING_TH')}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-inner text-xs font-medium transition flex items-center gap-1.5 ${
                 translationFilter === 'MISSING_TH'
-                  ? 'bg-amber-600 text-white shadow-sm font-semibold'
-                  : 'bg-white border border-zinc-200 text-amber-700 hover:border-amber-300'
+                  ? 'bg-amber-600 text-white shadow-astryx-low font-semibold'
+                  : 'bg-zinc-50 border border-zinc-200 text-amber-700 hover:border-amber-300'
               }`}
             >
               <span>🇹🇭 Needs Thai ({translationStats.missingTh})</span>
@@ -470,10 +470,10 @@ export default function PostsListPage() {
             <button
               type="button"
               onClick={() => setTranslationFilter('MISSING_EN')}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+              className={`px-3 py-1.5 rounded-inner text-xs font-medium transition flex items-center gap-1.5 ${
                 translationFilter === 'MISSING_EN'
-                  ? 'bg-amber-600 text-white shadow-sm font-semibold'
-                  : 'bg-white border border-zinc-200 text-amber-700 hover:border-amber-300'
+                  ? 'bg-amber-600 text-white shadow-astryx-low font-semibold'
+                  : 'bg-zinc-50 border border-zinc-200 text-amber-700 hover:border-amber-300'
               }`}
             >
               <span>🇬🇧 Needs English ({translationStats.missingEn})</span>
@@ -492,21 +492,21 @@ export default function PostsListPage() {
             placeholder="Search by title or slug..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 bg-white py-2 pl-9 pr-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+            className="w-full rounded-element border border-zinc-200/90 bg-white py-2 pl-9 pr-3 text-xs text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900 shadow-astryx-low"
           />
         </div>
 
         {/* Segmented Filter Control - Linear Style */}
-        <div className="inline-flex items-center p-1 rounded-lg bg-zinc-100 border border-zinc-200/80 self-start sm:self-auto overflow-x-auto">
+        <div className="inline-flex items-center p-1 rounded-element bg-zinc-100 border border-zinc-200/80 self-start sm:self-auto overflow-x-auto shadow-astryx-low">
           {(['ALL', 'PUBLISHED', 'SCHEDULED', 'DRAFT'] as const).map((s) => {
             const active = statusFilter === s
             return (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-inner text-xs font-medium transition-all ${
                   active
-                    ? 'bg-white text-zinc-900 shadow-sm font-semibold'
+                    ? 'bg-white text-zinc-900 shadow-astryx-low font-semibold'
                     : 'text-zinc-500 hover:text-zinc-900'
                 }`}
               >
@@ -525,7 +525,7 @@ export default function PostsListPage() {
       </div>
 
       {/* Posts Table */}
-      <div className="rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="rounded-container border border-zinc-200/90 bg-white shadow-astryx-low overflow-hidden">
         {filteredPosts.length === 0 ? (
           <div className="p-12 text-center text-zinc-500">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100 text-zinc-400 mb-3">
@@ -824,7 +824,7 @@ export default function PostsListPage() {
                               href={livePostUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 transition"
+                              className="flex h-7 w-7 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-400 hover:text-zinc-900 hover:border-zinc-300 transition shadow-astryx-low"
                               title="View Live"
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
@@ -832,7 +832,7 @@ export default function PostsListPage() {
                           )}
                           <Link
                             href={`/blogs/${blogId}/posts/${p.id}`}
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition shadow-astryx-low"
                             title="Edit Post"
                           >
                             <Edit3 className="h-3.5 w-3.5" />
@@ -840,14 +840,14 @@ export default function PostsListPage() {
                           <button
                             type="button"
                             onClick={() => handleDuplicateOne(p.id, title)}
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-500 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50/50 transition shadow-astryx-low"
                             title="Duplicate as Draft"
                           >
                             <Copy className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleDelete(p.id, title)}
-                            className="flex h-7 w-7 items-center justify-center rounded-md border border-zinc-200 text-zinc-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 transition"
+                            className="flex h-7 w-7 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-400 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 transition shadow-astryx-low"
                             title="Delete Post"
                           >
                             <Trash2 className="h-3.5 w-3.5" />

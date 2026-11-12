@@ -556,13 +556,13 @@ export default function PostStudioPage() {
   const counterpartVariant = post.variants.find((v) => v.languageCode !== activeLang)
 
   return (
-    <div className="w-full p-8 space-y-6">
-      {/* Top Header Bar - Full Width & Aligned */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 pb-6 border-b border-zinc-200/80">
+    <div className="w-full p-8 space-y-6 max-w-7xl mx-auto">
+      {/* Top Header Bar - Astryx Action Toolbar */}
+      <div className="rounded-container border border-zinc-200/90 bg-white p-4 shadow-astryx-low flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Link
             href={`/blogs/${blogId}/posts`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition shrink-0"
+            className="flex h-8 w-8 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-500 hover:text-zinc-900 hover:border-zinc-300 transition shrink-0 shadow-astryx-low"
             title="Back to Posts"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -590,7 +590,7 @@ export default function PostStudioPage() {
             </span>
 
             {/* Live Auto-Save Status Pill */}
-            <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-mono border bg-white border-zinc-200 shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-mono border bg-zinc-50 border-zinc-200/90 shadow-astryx-low">
               {autoSaveStatus === 'saving' ? (
                 <>
                   <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
@@ -646,7 +646,7 @@ export default function PostStudioPage() {
               href={livePostUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-sm hover:bg-zinc-50 hover:text-zinc-900 transition"
+              className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 shadow-astryx-low hover:bg-zinc-50 hover:text-zinc-900 transition"
             >
               <Globe className="h-3.5 w-3.5 text-zinc-400" />
               <span>Live Post</span>
@@ -657,7 +657,7 @@ export default function PostStudioPage() {
           <button
             type="button"
             onClick={() => setShowAiTranslateModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-astryx-low"
             title="Auto-translate to another language with AI"
           >
             <Sparkles className="h-3.5 w-3.5 text-purple-600" />
@@ -670,7 +670,7 @@ export default function PostStudioPage() {
               setShowRevisionsModal(true)
               loadRevisions()
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition shadow-astryx-low"
             title="Version history and snapshot rollbacks"
           >
             <History className="h-3.5 w-3.5 text-zinc-400" />
@@ -680,7 +680,7 @@ export default function PostStudioPage() {
           <button
             type="button"
             onClick={handleExportMarkdown}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition shadow-astryx-low"
             title="Export this post as Markdown (.md) with YAML frontmatter"
           >
             <FileDown className="h-3.5 w-3.5 text-zinc-400" />
@@ -690,7 +690,7 @@ export default function PostStudioPage() {
           <button
             type="button"
             onClick={() => setShowSeoPreviewModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-sm"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-100 transition shadow-astryx-low"
             title="Preview Google search snippet and social share cards"
           >
             <Globe className="h-3.5 w-3.5 text-purple-600" />
@@ -700,9 +700,9 @@ export default function PostStudioPage() {
           <button
             type="button"
             onClick={() => setShowSettingsSidebar(!showSettingsSidebar)}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+            className={`flex h-8 w-8 items-center justify-center rounded-inner border transition shadow-astryx-low ${
               showSettingsSidebar
-                ? 'bg-zinc-900 border-zinc-900 text-white shadow-sm'
+                ? 'bg-zinc-900 border-zinc-900 text-white'
                 : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
             }`}
             title="Toggle Post Settings"
@@ -714,7 +714,7 @@ export default function PostStudioPage() {
           <button
             type="button"
             onClick={() => setShowShortcutsModal(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition"
+            className="flex h-8 w-8 items-center justify-center rounded-inner border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900 transition shadow-astryx-low"
             title="Keyboard shortcuts (?)"
           >
             <Command className="h-3.5 w-3.5" />
@@ -724,7 +724,7 @@ export default function PostStudioPage() {
             type="button"
             disabled={saving}
             onClick={() => handleSaveVariant('DRAFT')}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-astryx-low hover:bg-zinc-50 disabled:opacity-50 transition"
           >
             <Save className="h-3.5 w-3.5 text-zinc-400" />
             <span>Save Draft</span>
@@ -735,7 +735,7 @@ export default function PostStudioPage() {
               type="button"
               disabled={saving}
               onClick={() => handleSaveVariant('DRAFT')}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-100 disabled:opacity-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-inner border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-astryx-low hover:bg-amber-100 disabled:opacity-50 transition"
               title="Cancel schedule and revert back to draft"
             >
               <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
@@ -754,7 +754,7 @@ export default function PostStudioPage() {
               setScheduleDateTime(isoLocal)
               setShowScheduleModal(true)
             }}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm hover:bg-purple-100 disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-astryx-low hover:bg-purple-100 disabled:opacity-50 transition"
           >
             <Clock className="h-3.5 w-3.5 text-purple-600" />
             <span>{status === 'SCHEDULED' ? 'Reschedule' : 'Schedule'}</span>
@@ -765,7 +765,7 @@ export default function PostStudioPage() {
             <button
               type="button"
               onClick={() => setShowChecklistPopover(!showChecklistPopover)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50 transition"
+              className="inline-flex items-center gap-1.5 rounded-inner border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-astryx-low hover:bg-zinc-50 transition"
               title="Publishing pre-flight checklist"
             >
               <CheckSquare className="h-3.5 w-3.5 text-zinc-400" />
@@ -798,7 +798,7 @@ export default function PostStudioPage() {
             type="button"
             disabled={saving}
             onClick={() => handleSaveVariant('PUBLISHED')}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
+            className="inline-flex items-center gap-1.5 rounded-inner bg-zinc-900 px-4 py-1.5 text-xs font-semibold text-white shadow-astryx-low hover:bg-zinc-800 active:bg-black disabled:opacity-50 transition"
           >
             <Send className="h-3.5 w-3.5" />
             <span>{status === 'PUBLISHED' ? 'Update Published' : 'Publish'}</span>
@@ -811,7 +811,7 @@ export default function PostStudioPage() {
                 setNewsletterSubject(title)
                 setShowNewsletterModal(true)
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-sm hover:bg-blue-100 transition"
+              className="inline-flex items-center gap-1.5 rounded-inner border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 shadow-astryx-low hover:bg-blue-100 transition"
               title="Send newsletter campaign to subscribers"
             >
               <Mail className="h-3.5 w-3.5 text-blue-600" />
@@ -833,9 +833,9 @@ export default function PostStudioPage() {
         </div>
       )}
 
-      {/* Language / Variant Bar - Aligned Width */}
+      {/* Language / Variant Bar - Astryx Segmented Control */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex items-center p-1 rounded-lg bg-zinc-100 border border-zinc-200/80 gap-1 overflow-x-auto">
+        <div className="inline-flex items-center p-1 rounded-element bg-zinc-100 border border-zinc-200/80 gap-1 overflow-x-auto shadow-astryx-low">
           <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-zinc-400 px-2">
             Language:
           </span>
@@ -848,9 +848,9 @@ export default function PostStudioPage() {
                 <button
                   key={lang.code}
                   onClick={() => selectVariant(v)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold uppercase transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-inner text-xs font-semibold uppercase transition-all ${
                     active
-                      ? 'bg-white text-zinc-900 shadow-sm'
+                      ? 'bg-white text-zinc-900 shadow-astryx-low'
                       : 'text-zinc-500 hover:text-zinc-900'
                   }`}
                   title={`${lang.nativeName} (${lang.label}) - ${v.status}`}
@@ -874,7 +874,7 @@ export default function PostStudioPage() {
                   setNewLangCode(lang.code)
                   setShowAddLangModal(true)
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-all border border-dashed border-zinc-300"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-inner text-xs font-medium text-zinc-400 hover:text-zinc-700 hover:bg-zinc-200/60 transition-all border border-dashed border-zinc-300"
                 title={`Click to add ${lang.nativeName} (${lang.label}) variant`}
               >
                 <span className="text-base opacity-60">{lang.flag}</span>
@@ -891,10 +891,10 @@ export default function PostStudioPage() {
             <button
               type="button"
               onClick={() => setIsSplitMode(!isSplitMode)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border ${
+              className={`inline-flex items-center gap-1.5 rounded-inner px-3 py-1.5 text-xs font-semibold transition border shadow-astryx-low ${
                 isSplitMode
-                  ? 'bg-zinc-900 text-white border-zinc-900 shadow-sm'
-                  : 'bg-white text-zinc-700 border-zinc-300 hover:border-zinc-400 hover:text-zinc-900'
+                  ? 'bg-zinc-900 text-white border-zinc-900'
+                  : 'bg-white text-zinc-700 border-zinc-200 hover:border-zinc-300 hover:text-zinc-900'
               }`}
               title="Toggle Split-Screen Translation Workbench"
             >
@@ -914,7 +914,7 @@ export default function PostStudioPage() {
                 }
                 setShowAddLangModal(true)
               }}
-              className="inline-flex items-center gap-1 rounded-lg border border-dashed border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 transition"
+              className="inline-flex items-center gap-1 rounded-inner border border-dashed border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400 hover:text-zinc-900 shadow-astryx-low transition"
             >
               <Plus className="h-3 w-3" />
               <span>Add Counterpart Draft</span>
@@ -927,7 +927,7 @@ export default function PostStudioPage() {
       <div className="flex flex-col lg:flex-row items-start gap-6 w-full">
         {/* Split Workbench: Read-Only Reference Panel on the Left */}
         {isSplitMode && counterpartVariant && (
-          <div className="flex-1 min-w-0 w-full rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="flex-1 min-w-0 w-full rounded-container border border-zinc-200/90 bg-white shadow-astryx-low overflow-hidden">
             <div className="px-5 py-3 bg-zinc-50 border-b border-zinc-200/80 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-base">{getLanguageOption(counterpartVariant.languageCode).flag}</span>
@@ -947,7 +947,7 @@ export default function PostStudioPage() {
                   setCopiedSource(true)
                   setTimeout(() => setCopiedSource(false), 2000)
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition"
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-inner text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border border-zinc-200 transition shadow-astryx-low"
                 title="Copy reference text to clipboard"
               >
                 {copiedSource ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
@@ -965,7 +965,7 @@ export default function PostStudioPage() {
                 <span>{counterpartVariant.wordCount} words</span>
               </div>
               {counterpartVariant.description && (
-                <p className="mt-3 text-xs text-zinc-600 bg-zinc-50 p-3 rounded-lg border border-zinc-200/70 leading-relaxed">
+                <p className="mt-3 text-xs text-zinc-600 bg-zinc-50 p-3 rounded-element border border-zinc-200/70 leading-relaxed">
                   {counterpartVariant.description}
                 </p>
               )}
@@ -984,7 +984,7 @@ export default function PostStudioPage() {
         )}
 
         {/* Unified Editor Card - Left/Right Side */}
-        <div className="flex-1 min-w-0 w-full rounded-xl border border-zinc-200/90 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="flex-1 min-w-0 w-full rounded-container border border-zinc-200/90 bg-white shadow-astryx-low overflow-hidden">
           {isSplitMode && (
             <div className="px-5 py-3 bg-zinc-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
