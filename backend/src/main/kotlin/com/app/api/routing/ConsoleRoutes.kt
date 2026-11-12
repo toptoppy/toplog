@@ -59,7 +59,8 @@ fun Route.consoleRoutes(
     exportService: ExportService,
     revisionService: RevisionService,
     schedulerService: SchedulerService,
-    ogImageService: OgImageService
+    ogImageService: OgImageService,
+    userService: UserService = UserService()
 ) {
     // 1. Static media uploads endpoint (public)
     get("/uploads/{filename}") {
@@ -83,6 +84,9 @@ fun Route.consoleRoutes(
                 val member = memberService.acceptInvite(token, principal.userId)
                 call.respond(HttpStatusCode.OK, member)
             }
+
+            // --- PLATFORM USERS (ADMIN ONLY) ---
+            consoleUserRoutes(userService)
 
             // --- BLOGS ---
             route("/blogs") {

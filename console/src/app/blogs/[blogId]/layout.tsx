@@ -97,6 +97,9 @@ export default function BlogLayout({
         { label: 'Team', href: `/blogs/${blogId}/team`, icon: Shield, exact: false },
         { label: 'Import', href: `/blogs/${blogId}/import`, icon: FileUp, exact: false },
         { label: 'Settings', href: `/blogs/${blogId}/settings`, icon: Settings, exact: false },
+        ...(user?.role === 'ADMIN'
+          ? [{ label: 'Platform Users', href: '/users', icon: Users, exact: false }]
+          : []),
       ],
     },
   ]

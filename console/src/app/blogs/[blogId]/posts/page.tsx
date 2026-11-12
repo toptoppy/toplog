@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { Blog, PostListItem } from '@/lib/types'
-import { getLanguageOption } from '@/lib/constants'
+import { getLanguageOption, SUPPORTED_LANGUAGES } from '@/lib/constants'
 import BulkActionsBar from '@/components/posts/BulkActionsBar'
 import {
   Plus,
@@ -20,6 +20,7 @@ import {
   FileEdit,
   Sparkles,
   Copy,
+  Languages,
 } from 'lucide-react'
 
 export default function PostsListPage() {
@@ -30,6 +31,9 @@ export default function PostsListPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const [translationFilter, setTranslationFilter] = useState<
+    'ALL' | 'COMPLETE' | 'MISSING_TH' | 'MISSING_EN'
+  >('ALL')
   const [publicUrl, setPublicUrl] = useState('')
   const [runningScheduler, setRunningScheduler] = useState(false)
   const [schedulerMessage, setSchedulerMessage] = useState<string | null>(null)
@@ -87,12 +91,31 @@ export default function PostsListPage() {
   }
 
   const filteredPosts = posts.filter((p) => {
+    const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
     const matchesSearch =
       (p.variant?.title || '').toLowerCase().includes(search.toLowerCase()) ||
-      (p.variant?.slug || '').toLowerCase().includes(search.toLowerCase())
+      (p.variant?.slug || '').toLowerCase().includes(search.toLowerCase()) ||
+      vars.some(
+        (v) =>
+          v.title.toLowerCase().includes(search.toLowerCase()) ||
+          v.slug.toLowerCase().includes(search.toLowerCase())
+      )
+
     const matchesStatus =
-      statusFilter === 'ALL' || p.variant?.status === statusFilter
-    return matchesSearch && matchesStatus
+      statusFilter === 'ALL' ||
+      p.variant?.status === statusFilter ||
+      vars.some((v) => v.status === statusFilter)
+
+    let matchesTranslation = true
+    if (translationFilter === 'COMPLETE') {
+      matchesTranslation = vars.some((v) => v.languageCode === 'en') && vars.some((v) => v.languageCode === 'th')
+    } else if (translationFilter === 'MISSING_TH') {
+      matchesTranslation = !vars.some((v) => v.languageCode === 'th')
+    } else if (translationFilter === 'MISSING_EN') {
+      matchesTranslation = !vars.some((v) => v.languageCode === 'en')
+    }
+
+    return matchesSearch && matchesStatus && matchesTranslation
   })
 
   // Esc key clears selection
@@ -288,10 +311,40 @@ export default function PostsListPage() {
 
   const counts = {
     ALL: posts.length,
-    PUBLISHED: posts.filter((p) => p.variant?.status === 'PUBLISHED').length,
-    SCHEDULED: posts.filter((p) => p.variant?.status === 'SCHEDULED').length,
-    DRAFT: posts.filter((p) => p.variant?.status === 'DRAFT').length,
+    PUBLISHED: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return vars.some((v) => v.status === 'PUBLISHED')
+    }).length,
+    SCHEDULED: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return vars.some((v) => v.status === 'SCHEDULED')
+    }).length,
+    DRAFT: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return vars.some((v) => v.status === 'DRAFT')
+    }).length,
   }
+
+  const translationStats = {
+    total: posts.length,
+    fullyTranslated: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return vars.some((v) => v.languageCode === 'en') && vars.some((v) => v.languageCode === 'th')
+    }).length,
+    missingTh: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return !vars.some((v) => v.languageCode === 'th')
+    }).length,
+    missingEn: posts.filter((p) => {
+      const vars = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+      return !vars.some((v) => v.languageCode === 'en')
+    }).length,
+  }
+
+  const coveragePercent =
+    translationStats.total > 0
+      ? Math.round((translationStats.fullyTranslated / translationStats.total) * 100)
+      : 100
 
   return (
     <div className="w-full p-8 space-y-6">
@@ -355,6 +408,79 @@ export default function PostsListPage() {
           </button>
         </div>
       )}
+
+      {/* Bilingual Translation Progress Widget */}
+      <div className="rounded-xl border border-zinc-200/80 bg-gradient-to-r from-zinc-50/70 via-white to-zinc-50/40 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 border border-blue-100 shrink-0">
+            <Languages className="h-4.5 w-4.5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-zinc-900">Bilingual Translation Health</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                {coveragePercent}% Translated
+              </span>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {translationStats.fullyTranslated} of {translationStats.total} articles have both English 🇬🇧 and Thai 🇹🇭 versions.
+            </p>
+          </div>
+        </div>
+
+        {/* Translation Filter Pills */}
+        <div className="flex items-center gap-1.5 flex-wrap self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => setTranslationFilter('ALL')}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+              translationFilter === 'ALL'
+                ? 'bg-zinc-900 text-white shadow-sm font-semibold'
+                : 'bg-white border border-zinc-200 text-zinc-600 hover:text-zinc-900 hover:border-zinc-300'
+            }`}
+          >
+            All ({translationStats.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTranslationFilter('COMPLETE')}
+            className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+              translationFilter === 'COMPLETE'
+                ? 'bg-emerald-600 text-white shadow-sm font-semibold'
+                : 'bg-white border border-zinc-200 text-emerald-700 hover:border-emerald-300'
+            }`}
+          >
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Complete ({translationStats.fullyTranslated})</span>
+          </button>
+          {translationStats.missingTh > 0 && (
+            <button
+              type="button"
+              onClick={() => setTranslationFilter('MISSING_TH')}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+                translationFilter === 'MISSING_TH'
+                  ? 'bg-amber-600 text-white shadow-sm font-semibold'
+                  : 'bg-white border border-zinc-200 text-amber-700 hover:border-amber-300'
+              }`}
+            >
+              <span>🇹🇭 Needs Thai ({translationStats.missingTh})</span>
+            </button>
+          )}
+          {translationStats.missingEn > 0 && (
+            <button
+              type="button"
+              onClick={() => setTranslationFilter('MISSING_EN')}
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1 ${
+                translationFilter === 'MISSING_EN'
+                  ? 'bg-amber-600 text-white shadow-sm font-semibold'
+                  : 'bg-white border border-zinc-200 text-amber-700 hover:border-amber-300'
+              }`}
+            >
+              <span>🇬🇧 Needs English ({translationStats.missingEn})</span>
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
@@ -445,7 +571,7 @@ export default function PostsListPage() {
                   </th>
                   <th className="px-4 py-3">Title & Slug</th>
                   <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Language</th>
+                  <th className="px-4 py-3">Translations & Progress</th>
                   <th className="px-4 py-3">Created</th>
                   <th className="px-6 py-3 text-right">Actions</th>
                 </tr>
@@ -570,15 +696,115 @@ export default function PostsListPage() {
 
                       <td className="px-4 py-4">
                         {(() => {
-                          const langOpt = getLanguageOption(lang)
+                          const variants = p.variants && p.variants.length > 0 ? p.variants : (p.variant ? [p.variant] : [])
+                          const enVariant = variants.find((v) => v.languageCode === 'en')
+                          const thVariant = variants.find((v) => v.languageCode === 'th')
+                          const translatedCount = (enVariant ? 1 : 0) + (thVariant ? 1 : 0)
+                          const allPublished = enVariant?.status === 'PUBLISHED' && thVariant?.status === 'PUBLISHED'
+
                           return (
-                            <span
-                              className="inline-flex items-center gap-1 rounded bg-zinc-100 border border-zinc-200/80 px-2 py-0.5 text-[10px] font-mono font-medium text-zinc-700 uppercase"
-                              title={`${langOpt.nativeName} (${langOpt.label})`}
-                            >
-                              <span>{langOpt.flag}</span>
-                              <span>{langOpt.code}</span>
-                            </span>
+                            <div className="flex flex-col gap-1.5 min-w-[210px]">
+                              {/* Language Variant Switcher Pills */}
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {/* English Variant Pill */}
+                                {enVariant ? (
+                                  <Link
+                                    href={`/blogs/${blogId}/posts/${p.id}?lang=en`}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium border transition ${
+                                      enVariant.status === 'PUBLISHED'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                        : enVariant.status === 'SCHEDULED'
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                    }`}
+                                    title={`English: "${enVariant.title}" (${enVariant.status}) - Click to edit EN`}
+                                  >
+                                    <span>🇬🇧</span>
+                                    <span className="font-semibold">EN:</span>
+                                    <span className="capitalize">{enVariant.status.toLowerCase()}</span>
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    href={`/blogs/${blogId}/posts/${p.id}?addLang=en`}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono border border-dashed border-zinc-300 text-zinc-400 bg-zinc-50/70 hover:border-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+                                    title="English translation missing - Click to add EN translation"
+                                  >
+                                    <span>🇬🇧</span>
+                                    <span>EN:</span>
+                                    <span className="text-zinc-500 font-normal">+ Add</span>
+                                  </Link>
+                                )}
+
+                                {/* Thai Variant Pill */}
+                                {thVariant ? (
+                                  <Link
+                                    href={`/blogs/${blogId}/posts/${p.id}?lang=th`}
+                                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium border transition ${
+                                      thVariant.status === 'PUBLISHED'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                        : thVariant.status === 'SCHEDULED'
+                                        ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                    }`}
+                                    title={`Thai: "${thVariant.title}" (${thVariant.status}) - Click to edit TH`}
+                                  >
+                                    <span>🇹🇭</span>
+                                    <span className="font-semibold">TH:</span>
+                                    <span className="capitalize">{thVariant.status.toLowerCase()}</span>
+                                  </Link>
+                                ) : (
+                                  <Link
+                                    href={`/blogs/${blogId}/posts/${p.id}?addLang=th`}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono border border-dashed border-zinc-300 text-zinc-400 bg-zinc-50/70 hover:border-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+                                    title="Thai translation missing - Click to add TH translation"
+                                  >
+                                    <span>🇹🇭</span>
+                                    <span>TH:</span>
+                                    <span className="text-zinc-500 font-normal">+ Add</span>
+                                  </Link>
+                                )}
+                              </div>
+
+                              {/* Progress Micro-Bar & Status */}
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-0.5 w-14 h-1.5 rounded-full overflow-hidden bg-zinc-100">
+                                  <div
+                                    className={`h-full flex-1 transition-all ${
+                                      enVariant?.status === 'PUBLISHED'
+                                        ? 'bg-emerald-500'
+                                        : enVariant
+                                        ? 'bg-amber-400'
+                                        : 'bg-zinc-200'
+                                    }`}
+                                  />
+                                  <div
+                                    className={`h-full flex-1 transition-all ${
+                                      thVariant?.status === 'PUBLISHED'
+                                        ? 'bg-emerald-500'
+                                        : thVariant
+                                        ? 'bg-amber-400'
+                                        : 'bg-zinc-200'
+                                    }`}
+                                  />
+                                </div>
+
+                                <span className="text-[10px] font-mono text-zinc-400">
+                                  {allPublished ? (
+                                    <span className="text-emerald-600 font-medium inline-flex items-center gap-0.5">
+                                      <CheckCircle2 className="h-2.5 w-2.5" /> 2/2 Complete
+                                    </span>
+                                  ) : translatedCount === 2 ? (
+                                    <span className="text-amber-600 inline-flex items-center gap-0.5">
+                                      <Clock className="h-2.5 w-2.5" /> 2/2 (Drafts)
+                                    </span>
+                                  ) : (
+                                    <span className="text-zinc-500">
+                                      1/2 ({enVariant ? 'Needs 🇹🇭' : 'Needs 🇬🇧'})
+                                    </span>
+                                  )}
+                                </span>
+                              </div>
+                            </div>
                           )
                         })()}
                       </td>

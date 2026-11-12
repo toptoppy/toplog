@@ -27,45 +27,73 @@ class PostService(
         status: PostStatus? = null,
         isPage: Boolean? = null
     ): List<PostListItemDto> = dbQuery {
-        var query = (Posts innerJoin PostVariants).selectAll()
-            .where { Posts.blogId eq blogId }
+        val blog = Blogs.selectAll().where { Blogs.id eq blogId }.singleOrNull()
+        val defaultLang = blog?.get(Blogs.defaultLanguage) ?: "en"
 
+        var postQuery = Posts.selectAll().where { Posts.blogId eq blogId }
         if (isPage != null) {
-            query = query.andWhere { Posts.isPage eq isPage }
-        }
-        if (languageCode != null) {
-            query = query.andWhere { PostVariants.languageCode eq languageCode }
-        }
-        if (status != null) {
-            query = query.andWhere { PostVariants.status eq status.name }
+            postQuery = postQuery.andWhere { Posts.isPage eq isPage }
         }
 
-        query.orderBy(Posts.createdAt to SortOrder.DESC)
-            .map { row ->
-                val postId = row[Posts.id].value
-                val tags = (PostTags innerJoin Tags).selectAll()
-                    .where { PostTags.postId eq postId }
-                    .map { tagRow ->
-                        TagDto(
-                            id = tagRow[Tags.id].value,
-                            blogId = tagRow[Tags.blogId].value,
-                            name = tagRow[Tags.name],
-                            slug = tagRow[Tags.slug],
-                            color = tagRow[Tags.color]
-                        )
-                    }
+        val allPosts = postQuery.orderBy(Posts.createdAt to SortOrder.DESC).toList()
+        if (allPosts.isEmpty()) return@dbQuery emptyList()
 
-                PostListItemDto(
-                    id = postId,
-                    blogId = row[Posts.blogId].value,
-                    isFeatured = row[Posts.isFeatured],
-                    isPage = row[Posts.isPage],
-                    featuredImageUrl = row[Posts.featuredImageUrl],
-                    createdAt = row[Posts.createdAt].toString(),
-                    variant = row.toPostVariant().toDto(),
-                    tags = tags
-                )
+        val postIds = allPosts.map { it[Posts.id].value }
+
+        val variantsByPost = PostVariants.selectAll()
+            .where { PostVariants.postId inList postIds }
+            .map { it.toPostVariant() }
+            .groupBy { it.postId }
+
+        val tagsByPost = (PostTags innerJoin Tags).selectAll()
+            .where { PostTags.postId inList postIds }
+            .groupBy(
+                keySelector = { it[PostTags.postId].value },
+                valueTransform = { tagRow ->
+                    TagDto(
+                        id = tagRow[Tags.id].value,
+                        blogId = tagRow[Tags.blogId].value,
+                        name = tagRow[Tags.name],
+                        slug = tagRow[Tags.slug],
+                        color = tagRow[Tags.color]
+                    )
+                }
+            )
+
+        allPosts.mapNotNull { row ->
+            val postId = row[Posts.id].value
+            val postVariants = variantsByPost[postId] ?: emptyList()
+            if (postVariants.isEmpty()) return@mapNotNull null
+
+            if (languageCode != null && postVariants.none { it.languageCode.equals(languageCode, ignoreCase = true) }) {
+                return@mapNotNull null
             }
+
+            val primaryVariant = when {
+                languageCode != null -> postVariants.find { it.languageCode.equals(languageCode, ignoreCase = true) }
+                else -> postVariants.find { it.languageCode == defaultLang } ?: postVariants.firstOrNull()
+            }
+
+            if (status != null) {
+                if (languageCode != null) {
+                    if (primaryVariant?.status != status) return@mapNotNull null
+                } else {
+                    if (postVariants.none { it.status == status }) return@mapNotNull null
+                }
+            }
+
+            PostListItemDto(
+                id = postId,
+                blogId = row[Posts.blogId].value,
+                isFeatured = row[Posts.isFeatured],
+                isPage = row[Posts.isPage],
+                featuredImageUrl = row[Posts.featuredImageUrl],
+                createdAt = row[Posts.createdAt].toString(),
+                variant = primaryVariant?.toDto(),
+                variants = postVariants.map { it.toSummaryDto() },
+                tags = tagsByPost[postId] ?: emptyList()
+            )
+        }
     }
 
     suspend fun searchPublishedPosts(
@@ -703,6 +731,21 @@ class PostService(
             scheduledAt = this.scheduledAt?.toString(),
             updatedAt = this.updatedAt.toString(),
             readingTimeMinutes = readingTime,
+            wordCount = words
+        )
+    }
+
+    private fun PostVariant.toSummaryDto(): PostVariantSummaryDto {
+        val words = this.contentHtml.replace(Regex("<[^>]*>"), " ").trim().split(Regex("\\s+")).filter { it.isNotBlank() }.size
+        return PostVariantSummaryDto(
+            id = this.id,
+            postId = this.postId,
+            languageCode = this.languageCode,
+            slug = this.slug,
+            title = this.title,
+            status = this.status,
+            publishedAt = this.publishedAt?.toString(),
+            scheduledAt = this.scheduledAt?.toString(),
             wordCount = words
         )
     }

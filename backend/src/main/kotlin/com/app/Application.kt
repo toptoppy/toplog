@@ -62,6 +62,7 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
     val importService = ImportService(postService, tagService)
     val newsletterService = NewsletterService(postService)
     val analyticsService = AnalyticsService()
+    val userService = UserService()
     val schedulerService = SchedulerService(webhookService, revisionService, domainService)
     if (startScheduler) {
         schedulerService.start()
@@ -170,7 +171,8 @@ fun Application.configureApp(config: AppConfig, initDb: Boolean = true, startSch
             exportService,
             revisionService,
             schedulerService,
-            ogImageService
+            ogImageService,
+            userService
         )
         deliveryRoutes(
             blogService,

@@ -34,6 +34,13 @@ import {
   PostRevision,
   AiStatus,
   AiTestResult,
+  PlatformUser,
+  CreatePlatformUserInput,
+  UpdatePlatformUserInput,
+  ResetUserPasswordInput,
+  DeleteUserInput,
+  DeleteUserResponse,
+  UserRole,
 } from './types'
 
 const TOKEN_KEY = 'blog_auth_token'
@@ -407,6 +414,37 @@ export const api = {
           method: 'POST',
         }
       ),
+  },
+
+  users: {
+    list: (params?: { q?: string; role?: UserRole }) => {
+      const sp = new URLSearchParams()
+      if (params?.q) sp.set('q', params.q)
+      if (params?.role) sp.set('role', params.role)
+      const qs = sp.toString()
+      return request<PlatformUser[]>(`/api/console/users${qs ? `?${qs}` : ''}`)
+    },
+    get: (id: number) => request<PlatformUser>(`/api/console/users/${id}`),
+    create: (data: CreatePlatformUserInput) =>
+      request<PlatformUser>('/api/console/users', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    update: (id: number, data: UpdatePlatformUserInput) =>
+      request<PlatformUser>(`/api/console/users/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    resetPassword: (id: number, data: ResetUserPasswordInput) =>
+      request<{ message: string }>(`/api/console/users/${id}/password`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: (id: number, data?: DeleteUserInput) =>
+      request<DeleteUserResponse>(`/api/console/users/${id}`, {
+        method: 'DELETE',
+        body: data ? JSON.stringify(data) : undefined,
+      }),
   },
 
   exportArchive: async (blogId: number, blogSlug: string = 'blog') => {

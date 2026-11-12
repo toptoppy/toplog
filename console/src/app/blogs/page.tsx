@@ -16,6 +16,8 @@ import {
   Layers,
   ArrowRight,
   X,
+  Users as UsersIcon,
+  Shield,
 } from 'lucide-react'
 
 export default function BlogsPage() {
@@ -125,6 +127,16 @@ export default function BlogsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {user?.role === 'ADMIN' && (
+              <Link
+                href="/users"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-purple-200 bg-purple-50/50 px-2.5 py-1.5 text-xs font-semibold text-purple-700 shadow-sm hover:bg-purple-100/60 transition"
+              >
+                <Shield className="h-3.5 w-3.5 text-purple-600" />
+                <span>Manage Users</span>
+              </Link>
+            )}
+
             <div className="hidden sm:flex items-center gap-2 pl-3 pr-2 py-1 rounded-full bg-zinc-100/80 border border-zinc-200 text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
               <span className="text-zinc-600 font-medium">{user?.name}</span>

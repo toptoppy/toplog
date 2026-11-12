@@ -160,17 +160,27 @@ export default function PostStudioPage() {
       setFeaturedImageUrl(p.featuredImageUrl || '')
       setCanonicalUrl(p.canonicalUrl || '')
 
-      // Select default or first variant
-      const defaultVariant =
+      // Check query params for active language or add language request
+      const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+      const requestedLang = searchParams?.get('lang')
+      const addLang = searchParams?.get('addLang')
+
+      // Select requested, default, or first variant
+      const targetVariant =
+        (requestedLang ? p.variants.find((v) => v.languageCode === requestedLang) : null) ||
         p.variants.find((v) => v.languageCode === b.defaultLanguage) ||
         p.variants[0]
 
-      if (defaultVariant) {
-        selectVariant(defaultVariant)
+      if (targetVariant) {
+        selectVariant(targetVariant)
       } else {
         setTimeout(() => {
           isInitialMountRef.current = false
         }, 500)
+      }
+
+      if (addLang && !p.variants.some((v) => v.languageCode === addLang)) {
+        setShowAddLangModal(true)
       }
 
       api.ai.status(blogId).then(setAiStatus).catch(console.error)

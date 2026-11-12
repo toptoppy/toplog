@@ -74,6 +74,19 @@ data class PostDto(
 )
 
 @Serializable
+data class PostVariantSummaryDto(
+    val id: Long,
+    val postId: Long,
+    val languageCode: String,
+    val slug: String,
+    val title: String,
+    val status: PostStatus,
+    val publishedAt: String? = null,
+    val scheduledAt: String? = null,
+    val wordCount: Int = 0
+)
+
+@Serializable
 data class PostListItemDto(
     val id: Long,
     val blogId: Long,
@@ -82,6 +95,7 @@ data class PostListItemDto(
     val featuredImageUrl: String?,
     val createdAt: String,
     val variant: PostVariantDto?,
+    val variants: List<PostVariantSummaryDto> = emptyList(),
     val tags: List<TagDto> = emptyList()
 )
 

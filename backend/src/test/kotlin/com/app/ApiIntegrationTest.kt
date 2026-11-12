@@ -512,5 +512,18 @@ class ApiIntegrationTest {
         assertEquals("english-counterpart", publicThDetail.alternateLanguages[0].slug)
         assertEquals("th", publicThDetail.alternateLanguages[1].languageCode)
         assertEquals("thai-post", publicThDetail.alternateLanguages[1].slug)
+
+        // 10. Verify Console Post List returns PostListItemDto with variants tracking (no post duplication)
+        val listRes = client.get("/api/console/blogs/$blogThId/posts") {
+            header(HttpHeaders.Authorization, "Bearer $token")
+        }
+        assertEquals(HttpStatusCode.OK, listRes.status)
+        val listPosts = listRes.body<List<PostListItemDto>>()
+        assertEquals(1, listPosts.size, "Post should not be duplicated across multiple variants in post list")
+        val postItem = listPosts.first()
+        assertEquals(createdPost.id, postItem.id)
+        assertEquals(2, postItem.variants.size, "Variants list should contain both EN and TH variants")
+        assertTrue(postItem.variants.any { it.languageCode == "th" && it.status == PostStatus.PUBLISHED })
+        assertTrue(postItem.variants.any { it.languageCode == "en" && it.status == PostStatus.PUBLISHED })
     }
 }

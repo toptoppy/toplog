@@ -118,6 +118,18 @@ export interface Post {
   tags: Tag[]
 }
 
+export interface PostVariantSummary {
+  id: number
+  postId: number
+  languageCode: string
+  slug: string
+  title: string
+  status: PostStatus
+  publishedAt?: string | null
+  scheduledAt?: string | null
+  wordCount?: number
+}
+
 export interface PostListItem {
   id: number
   blogId: number
@@ -126,6 +138,7 @@ export interface PostListItem {
   featuredImageUrl: string | null
   createdAt: string
   variant: PostVariant | null
+  variants?: PostVariantSummary[]
   tags: Tag[]
 }
 
@@ -388,6 +401,45 @@ export interface AiTestResult {
   message?: string
   error?: string
 }
+
+export interface PlatformUser {
+  id: number
+  email: string
+  name: string
+  role: UserRole
+  ownedBlogsCount: number
+  memberBlogsCount: number
+  createdAt: string
+}
+
+export interface CreatePlatformUserInput {
+  email: string
+  name: string
+  password: string
+  role?: UserRole
+}
+
+export interface UpdatePlatformUserInput {
+  name?: string
+  email?: string
+  role?: UserRole
+}
+
+export interface ResetUserPasswordInput {
+  newPassword: string
+}
+
+export interface DeleteUserInput {
+  transferOwnershipToUserId?: number
+  confirmEmail?: string
+}
+
+export interface DeleteUserResponse {
+  success: boolean
+  message: string
+  blogsReassignedCount: number
+}
+
 
 
 
